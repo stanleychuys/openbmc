@@ -59,7 +59,7 @@ RDEPENDS_${PN}-system = " \
         asd \
         iptables \
         iptable-save \
-        pch-time-sync \
+        bmc-time-sync \
         phosphor-post-code-manager \
         smbios-mdrv2 \
         intel-dbus-interfaces \
