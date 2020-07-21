@@ -1,7 +1,7 @@
 SRC_URI_remove_olympus-nuvoton = "git://github.com/openbmc/phosphor-host-ipmid"
 SRC_URI_prepend_olympus-nuvoton = "git://github.com/Nuvoton-Israel/phosphor-host-ipmid"
 
-SRCREV := "e8cdfd2cf8df3df6a41cae96193988238a9b1100"
+SRCREV := "d137053dc488076b19562ef0cd62de8b07249abe"
 
 FILESEXTRAPATHS_append_olympus-nuvoton := "${THISDIR}/${PN}:"
 
