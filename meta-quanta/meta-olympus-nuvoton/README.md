@@ -38,37 +38,42 @@ Please submit any patches against the meta-runbmc-nuvoton layer to the maintaine
     + [iKVM](#ikvm)
     + [Serial Over Lan](#serial-over-lan)
     + [Virtual Media](#virtual-media)
-    + [BMC Firmware Update](#bmc-firmware-update)
-    + [BIOS update](#bios-update)
+    + [BMC Firmware Update Over Lan](#bmc-firmware-update-over-lan)
+    + [BIOS Firmware Update Over Lan](#bios-firmware-update-over-lan)
     + [Server Power Operations](#server-power-operations)
     + [Certificate Management](#Certificate-Management)
   * [System](#system)
-    + [Time](#time)
-    + [Sensor](#sensor)
-    + [LED](#led)
-    + [BIOS POST Code](#bios-post-code)
-    + [FRU](#fru)
+    + [Sensors](#sensors)
+    + [LED Manager](#led-manager)
     + [Fan PID Control](#fan-pid-control)
-  * [IPMI / DCMI](#ipmi--dcmi)
-    + [SOL IPMI](#sol-ipmi)
+    + [Event Policy](#event-policy)
+    + [Time Sync](#time-sync)
+      + [NTP Server](#ntp-server)
+      + [Intel PCH Time Sync](#intel-pch-time-sync)
+      + [Intel Node Manager Get SEL Time](#intel-node-manager-get-sel-time)
+    + [Inventory](#inventory)
+      + [IPMI FRU](#ipmi-fru)
+      + [Power Supply Unit Inventory](#power-supply-unit-inventory)
+    + [Network](#network)
+      + [VLAN](#vlan)
+    + [BIOS POST Code](#bios-post-code)
+    + [IPMI SOL](#ipmi-sol)
     + [Host Power Budget Control](#host-power-budget-control)
-  * [LDAP for User Management](#ldap-for-user-management)
-    + [LDAP Server Setup](#ldap-server-setup)
+  * [PECI](#peci)
+    + [Intel Crash Dump](#intel-crash-dump)
   * [JTAG Master](#jtag-master)
-    + [ASD](#asd)
+    + [Intel At-Scale Debug](#intel-at-scale-debug)
     + [CPLD Programming](#cpld-programming)
-  * [System Event Policy](#system-event-policy)
-  * [In-Band Firmware Update](#in-band-firmware-update)
+  * [BMC / BIOS In-Band Firmware Update](#bmc--bios-in-band-firmware-update)
     + [HOST Tool](#host-tool)
     + [IPMI Library](#ipmi-library)
-  * [VLAN](#vlan)
+  * [LDAP for User Management](#ldap-for-user-management)
+    + [LDAP Server Setup](#ldap-server-setup)
 - [OpenBMC Test Automation](#openbmc-test-automation)
-- [Features In Progressing](#features-in-progressing)
-- [Features Planned](#features-planned)
-- [IPMI Commands Verified](#ipmi-commands-verified)
-- [DCMI Commands Verified](#dcmi-commands-verified)
+- [IPMI Commands](#ipmi-commands)
+- [DCMI Commands](#dcmi-commands)
+- [Redfish APIs](#redfish-apis)
 - [Image Size](#image-size)
-- [Modifications](#modifications)
 
 # Features of NPCM750 RunBMC Olympus
 
@@ -102,7 +107,7 @@ This is a Virtual Network Computing (VNC) server programm using [LibVNCServer](h
     ```
 5. Navigate to OpenBMC WebUI viewer
     ```
-    Server control -> KVM
+    https://<poelg ip>/#/server-control/kvm
     ```
 **Performance**
 
@@ -138,15 +143,9 @@ PreferredEncoding: Hextile
 
 The Serial over LAN (SoL) console redirects the output of the server’s serial port to a browser window on your workstation.
 
-This is a patch for enabling SOL in [phosphor-webui](https://github.com/openbmc/phosphor-webui) on Nuvoton's NPCM750.
-
-The patch provides the [obmc-console](https://github.com/openbmc/obmc-console) configuration.
-
-It's verified with Nuvoton's NPCM750 Olympus solution and Quanta RunBMC.
-
 **Source URL**
 
-* [https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/console](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/console)
+* [https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/console](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/console)
 
 **How to use**
 
@@ -184,7 +183,7 @@ Virtual Media (VM) is to emulate an USB drive on remote host PC via Network Bloc
 
 **Source URL**
 
-* [https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-phosphor/nuvoton-layer/recipes-connectivity/jsnbd](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-phosphor/nuvoton-layer/recipes-connectivity/jsnbd)
+* [https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-phosphor/nuvoton-layer/recipes-connectivity/jsnbd](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-phosphor/nuvoton-layer/recipes-connectivity/jsnbd)
 * [https://github.com/Nuvoton-Israel/openbmc-util/tree/master/virtual_media_openbmc2.6](https://github.com/Nuvoton-Israel/openbmc-util/tree/master/virtual_media_openbmc2.6)
 
 **How to use**
@@ -231,7 +230,7 @@ Virtual Media (VM) is to emulate an USB drive on remote host PC via Network Bloc
 **Maintainer**
 * Medad CChien
 
-### BMC Firmware Update
+### BMC Firmware Update Over Lan
 <img align="right" width="30%" src="https://cdn.rawgit.com/NTC-CCBG/snapshots/cab7306/openbmc/firmware-update.png">
 
 This is a secure flash update mechanism to update BMC firmware via WebUI.
@@ -270,15 +269,15 @@ This is a secure flash update mechanism to update BMC firmware via WebUI.
     We can update BMC firmware via REST API provided by Redfish. The firmware will apply immediately after uploaded without any confirmation by default.
     The following command shows how to using curl command upload BMC firmware.
     ```
-    curl -X POST -H "x-auth-token: ${token}" --data-binary obmc-phosphor-image-olympus-nuvoton.static.mtd.tar https://${BMC_IP}/redfish/v1/UpdateService
+    curl -k -H "X-Auth-Token: $token" -H "Content-Type: application/octet-stream" -X POST -T obmc-phosphor-image-olympus-nuvoton.static.mtd.tar https://${BMC_IP}/redfish/v1/UpdateService    
     ```
     >_${token} is the token value come from login API, read more information from [REST README](https://github.com/openbmc/docs/blob/master/REST-cheatsheet.md)_
 
 **Maintainer**
 
-* Medad CChien
+* Brian Ma
 
-### BIOS update
+### BIOS Firmware Update Over Lan
 <img align="right" width="40%" src="https://cdn.rawgit.com/NTC-CCBG/snapshots/0771b2f/openbmc/bios_update_demo.PNG">
   This BIOS update function is implemented according to Openbmc firmware update mechanism. Users can update BIOS just like they update BMC firmware via web UI.
 
@@ -286,7 +285,7 @@ This is a secure flash update mechanism to update BMC firmware via WebUI.
 **Source URL**
 
 * [https://github.com/Nuvoton-Israel/phosphor-bmc-code-mgmt](https://github.com/Nuvoton-Israel/phosphor-bmc-code-mgmt)
-* [https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-phosphor/nuvoton-layer/recipes-phosphor/ipmi/phosphor-ipmi-flash_%25.bbappend](https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-phosphor/nuvoton-layer/recipes-phosphor/ipmi/phosphor-ipmi-flash_%25.bbappend)
+* [https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-olympus-nuvoton/ipmi-bios-update](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-olympus-nuvoton/ipmi-bios-update)
 
 **How to use**
 
@@ -352,8 +351,9 @@ This is a secure flash update mechanism to update BMC firmware via WebUI.
 
       We can update BIOS image via REST API just like BMC firmware. And the image will apply immediately after uploaded by default.
       ```
-      curl -X POST -H "x-auth-token: ${token}" --data-binary image-bios.tar https://${BMC_IP}/redfish/v1/UpdateService
+      curl -k -H "X-Auth-Token: $token" -H "Content-Type: application/octet-stream" -X POST -T image-bios.tar https://${BMC_IP}/redfish/v1/UpdateService
       ```
+      >_${token} is the token value come from login API, read more information from [REST README](https://github.com/openbmc/docs/blob/master/REST-cheatsheet.md)_
 
 **Maintainer**
 
@@ -366,16 +366,16 @@ Server Power Operations are using to Power on/Warm reboot/Cold reboot/Orderly sh
 
 **Source URL**
 
-* [https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/chassis](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/chassis)
+* [https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/chassis](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/chassis)
 
 **How to use**
 
 1. Configure reaction of power button on generic host OS
-    * When host OS is running **Linux** and you press **PWRON** header on motherboard, you're prompted with a list of options - this is the **interactive** shutdown. The OS will go **Orderly shutdown** for a while if you didn't select any action from it. If you don't want this interactive shutdown pop up and hope OS go **Orderly shutdown** directly, you can enter below command in terminal before testing:
+    * When host OS is running **Linux** and you press **PWRON** button on motherboard, you're prompted with a list of options - this is the **interactive** shutdown. The OS will go **Orderly shutdown** for a while if you didn't select any action from it. If you don't want this interactive shutdown pop up and hope OS go **Orderly shutdown** directly, you can enter below command in terminal before testing:
       ```
       gsettings set org.gnome.settings-daemon.plugins.power button-power 'shutdown'
       ```
-    * When host OS is running **Windows** and you press **PWRON** header on motherboard, the default reaction is **Orderly shutdown**. Thus, you didn't need to configure reaction of power button in Windows. But, if you find the default reaction is not **Orderly shutdown**, please check `Control Panel`->`Power Options`->`System Settings` in Windows OS.
+    * When host OS is running **Windows** and you press **PWRON** button on motherboard, the default reaction is **Orderly shutdown**. Thus, you didn't need to configure reaction of power button in Windows. But, if you find the default reaction is not **Orderly shutdown**, please check `Control Panel`->`Power Options`->`System Settings` in Windows OS.
 
     * About Watchdog patch
 
@@ -383,7 +383,7 @@ Server Power Operations are using to Power on/Warm reboot/Cold reboot/Orderly sh
 
 2. Configure GPIO pin definitions for **POWER_SW**, **RESET_SW** and **PGOOD** on BMC
 
-    * Pin **POWER_SW** (GPIO505) is use to do all server power operations, pin **RESET_SW** (GPIO504) is reserve for reset operations, and **PGOOD** (GPIO506) is use to monitor DC real status that indicate `Server power` in WebUI.
+    * Pin **POWER_SW** (GPIO451) is use to do all server power operations, pin **RESET_SW** (GPIO452) is reserve for reset operations, and **PGOOD** (GPIO506) is use to monitor DC real status that indicate `Server power` in WebUI.
 
     * If other GPIO pins are preferred, please modify the file [gpio_defs.json](https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/skeleton/obmc-libobmc-intf/gpio_defs.json).
 
@@ -402,11 +402,11 @@ Server Power Operations are using to Power on/Warm reboot/Cold reboot/Orderly sh
       "direction": "in"
 
       "name": "POWER_UP_PIN",
-      "num": 505,
+      "num": 451,
       "direction": "out"
 
       "name": "RESET_UP_PIN",
-      "num": 504,
+      "num": 452,
       "direction": "out"
       ```
       > _"name" here is referred in code and fixed, please don't modify it. "num"  means GPIO pin number and changeable here, "direction" should be set as "in" for **PGOOD**, "out" for **RESET_UP_PIN** and **POWER_UP_PIN**, and "polarity" should be set as "false" then set as "true" for **POWER_UP_PIN** accordind NPCM750 schematic._
@@ -414,27 +414,27 @@ Server Power Operations are using to Power on/Warm reboot/Cold reboot/Orderly sh
 3. Server Power on
     * Press `Power on` button from `Server control` ->`Server power operations` of WebUI.
 
-      > _[obmc-host-start@.target](https://github.com/openbmc/openbmc/blob/master/meta-phosphor/recipes-core/systemd/obmc-targets/obmc-host-start%40.target) is the one driving the boot of the system._
+      > _[obmc-host-start@.target](https://github.com/openbmc/phosphor-state-manager/blob/master/target_files/obmc-host-start%40.target) is the one driving the boot of the system._
 
 4. Server Power off (Soft)
     * Press `Orderly shutdown` button from `Server control` ->`Server power operations` of WebUI.
 
-      > _The soft server power off function is encapsulated in the [obmc-host-shutdown@.target](https://github.com/openbmc/openbmc/blob/master/meta-phosphor/recipes-core/systemd/obmc-targets/obmc-host-shutdown%40.target) that is soft in that it notifies the host of the power off request and gives it a certain amount of time to shut itself down._
+      > _The soft server power off function is encapsulated in the [obmc-host-shutdown@.target](https://github.com/openbmc/phosphor-state-manager/blob/master/target_files/obmc-host-shutdown%40.target) that is soft in that it notifies the host of the power off request and gives it a certain amount of time to shut itself down._
 
 5. Server Power off (Hard)
     * Press `Immediate shutdown` button from `Server control` ->`Server power operations` of WebUI.
 
-      > _The hard server power off is encapsulated in the [obmc-chassis-hard-poweroff@.target](https://github.com/openbmc/openbmc/blob/master/meta-phosphor/recipes-core/systemd/obmc-targets/obmc-chassis-hard-poweroff%40.target) that will force the stopping of the soft power off service if running, and immediately cut power to the system._
+      > _The hard server power off is encapsulated in the [obmc-chassis-hard-poweroff@.target](https://github.com/openbmc/phosphor-state-manager/blob/master/target_files/obmc-chassis-hard-poweroff%40.target) that will force the stopping of the soft power off service if running, and immediately cut power to the system._
 
 6. Server Reboot (Warm)
     * Press `Warm reboot` button from `Server control` ->`Server power operations` of WebUI.
 
-      > _The warm reboot of the server is encapsulated in the [obmc-host-reboot@.target](https://github.com/openbmc/openbmc/blob/master/meta-phosphor/recipes-core/systemd/obmc-targets/obmc-host-reboot%40.target) that will utilize the server power off (soft) target [obmc-host-shutdown@.target](https://github.com/openbmc/openbmc/blob/master/meta-phosphor/recipes-core/systemd/obmc-targets/obmc-host-shutdown%40.target) and then, once that completes, start the host power on target [obmc-host-start@.target](https://github.com/openbmc/openbmc/blob/master/meta-phosphor/recipes-core/systemd/obmc-targets/obmc-host-start%40.target)._
+      > _The warm reboot of the server is encapsulated in the [obmc-host-reboot@.target](https://github.com/openbmc/phosphor-state-manager/blob/master/target_files/obmc-host-reboot%40.target) that will utilize the server power off (soft) target [obmc-host-shutdown@.target](https://github.com/openbmc/phosphor-state-manager/blob/master/target_files/obmc-host-shutdown%40.target) and then, once that completes, start the host power on target [obmc-host-start@.target](https://github.com/openbmc/phosphor-state-manager/blob/master/target_files/obmc-host-start%40.target)._
 
 7. Server Reboot (Cold)
     * Press `Cold reboot` button from `Server control` ->`Server power operations` of WebUI.
 
-      > _The cold reboot of the server is shutdown server immediately, then restarts it. This target will utilize the Immediate shutdown target [obmc-chassis-hard-poweroff@.target](https://github.com/openbmc/openbmc/blob/master/meta-phosphor/recipes-core/systemd/obmc-targets/obmc-chassis-hard-poweroff%40.target) and then, start the host power on target [obmc-host-start@.target](https://github.com/openbmc/openbmc/blob/master/meta-phosphor/recipes-core/systemd/obmc-targets/obmc-host-start%40.target)._
+      > _The cold reboot of the server is shutdown server immediately, then restarts it. This target will utilize the Immediate shutdown target [obmc-chassis-hard-poweroff@.target](https://github.com/openbmc/phosphor-state-manager/blob/master/target_files/obmc-chassis-hard-poweroff%40.target) and then, start the host power on target [obmc-host-start@.target](https://github.com/openbmc/phosphor-state-manager/blob/master/target_files/obmc-host-start%40.target)._
 
 **Maintainer**
 * Tim Lee
@@ -512,144 +512,13 @@ Management operations:
 
 ## System
 
-### Time
-  * **SNTP**
-    	Network Time Protocol (NTP) is a networking protocol for clock synchronization between computer systems over packet-switched, variable-latency data networks.
-
-    **systemd-timesyncd** is a daemon that has been added for synchronizing the system clock across the network. It implements an **SNTP (Simple NTP)** client. This daemon runs with minimal privileges, and has been hooked up with **systemd-networkd** to only operate when network connectivity is available.
-        
-    The modification time of the file **/var/lib/systemd/timesync/clock** indicates the timestamp of the last successful synchronization (or at least the **systemd build date**, in case synchronization was not possible).
-    
-    **Source URL**
-    * [https://github.com/systemd/systemd/tree/master/src/timesync](https://github.com/systemd/systemd/tree/master/src/timesync)
-    
-    **How to use**
-    <img align="right" width="30%" src="https://raw.githubusercontent.com/NTC-CCBG/snapshots/master/openbmc/Time.PNG">
-    * Enable NTP by **Web-UI** `Server configuration`
-      ->`Date and time settings`
-    * Enable NTP by command
-      ```
-      timedatectl set-ntp true  
-      ```
-      >_timedatectl result will show **systemd-timesyncd.service active: yes**_ 
-    
-      If NTP is Enabled and network is Connected (Using **eth2** connect to router), we will see the item **systemd-timesyncd.service active** is **yes** and **System clock synchronized** is **yes**. Thus, system time will sync from NTP server to get current time.
-    * Get NTP status  
-      ```
-      timedatectl  
-      ```
-      >_Local time: Mon 2018-08-27 09:24:51 UTC  
-      >Universal time: Mon 2018-08-27 09:24:51 UTC  
-      >RTC time: n/a  
-      >Time zone: n/a (UTC, +0000)  
-      >**System clock synchronized: yes**  
-      >**systemd-timesyncd.service active: yes**  
-      >RTC in local TZ: no_  
-      
-    * Disable NTP  
-      ```
-      timedatectl set-ntp false  
-      ```
-      >_timedatectl result will show **systemd-timesyncd.service active: no**_  
-      
-    * Using Local NTP server Configuration  
-    When starting, systemd-timesyncd will read the configuration file from **/etc/systemd/timesyncd.conf**, which looks like as below: 
-        >_[Time]  
-        >\#NTP=  
-        >\#FallbackNTP=time1.google.com time2.google.com time3.google.com time4.google.com_  
-    
-    	By default, systemd-timesyncd uses the Google Public NTP servers **time[1-4].google.com**, if no other NTP configuration is available. To add time servers or change the provided ones, **uncomment** the relevant line and list their host name or IP separated by a space. For example, we setup NB windows 10 system as NTP server with IP **192.168.1.128**  
-        >_[Time]  
-        >**NTP=192.168.1.128**  
-    	>\#FallbackNTP=time1.google.com time2.google.com time3.google.com time4.google.com_
-    
-    * BMC connect to local NTP server of windows 10 system  
-      Connect to NB through **eth0** EMAC interface, and set static IP **192.168.1.15**  
-    
-      ```
-      ifconfig eth0 up
-      ifconfig eth0 192.168.1.15
-      ```  
-      >_Note: Before that you need to setup your NTP server (192.168.1.128) on Windows 10 system first_  
-      
-      Modify **/etc/systemd/timesyncd.conf** file on BMC as we mentioned
-        >_[Time]  
-        >**NTP=192.168.1.128**_  
-      
-      Re-start NTP to make effect about our configuration change  
-      ```
-      systemctl restart systemd-timesyncd.service
-      ```  
-      Check status of NTP that show already synced to our local time server 
-      ```
-      systemctl status systemd-timesyncd.service -l --no-pager
-      ```  
-      >_Status: "Synchronized to time server 192.168.1.128:123 (192.168.1.128)."_  
-      
-      Verify **Web-UI** `Server overview`->`BMC time` whether sync from NTP server as same as **timedatectl**. (Note: timedatectl time zone default is UTC, thus you will find the BMC time is UTC+8)
-      ```
-      timedatectl  
-      ```
-      >_Local time: Thu 2018-09-06 07:24:16 UTC  
-      >Universal time: Thu 2018-09-06 07:24:16 UTC  
-      >RTC time: n/a  
-      >Time zone: n/a (UTC, +0000)  
-      >System clock synchronized: yes  
-      >systemd-timesyncd.service active: yes  
-      >RTC in local TZ: no_  
-
-  * **Time settings**  
-    **Phosphor-time-manager** provides two objects on D-Bus
-      >_/xyz/openbmc_project/time/bmc_
-      >
-      >_/xyz/openbmc_project/time/host_  
-
-      **BMC time** is used by journal event log record, and **Host time** is used by Host do IPMI Set SEL Time command to sync BMC time from Host mechanism in an era of BMC without any network interface.  
-      Currently, we cannot set Host time no matter what we use **busctl**, **REST API** or **ipmitool set time set** command. Due to **phosphor-settingd** this daemon set default TimeOwner is BMC and TimeSyncMethod is NTP. Thus, when TimeOwner is BMC that is not allow to set Host time anyway.
-
-      A summary of which cases the time can be set on BMC or HOST
-
-      Mode      | Owner | Set BMC Time  | Set Host Time
-      --------- | ----- | ------------- | -------------------
-      NTP       | BMC   | Fail to set   | Not allowed (Default setting)
-      NTP       | HOST  | Not allowed   | Not allowed
-      NTP       | SPLIT | Fail to set   | OK
-      NTP       | BOTH  | Fail to set   | Not allowed
-      MANUAL    | BMC   | OK            | Not allowed
-      MANUAL    | HOST  | Not allowed   | OK
-      MANUAL    | SPLIT | OK            | OK
-      MANUAL    | BOTH  | OK            | OK
-
-      If user would like to set Host time that need to set Owner to SPLIT in NTP mode or set Owner to HOST/SPLIT/BOTH in MANUAL mode. However, change Host time will not effect BMC time and journal event log timestamp.
-
-    **Set Time Owner to Split**
-    ```
-    ### With busctl on BMC
-    busctl set-property xyz.openbmc_project.Settings \
-       /xyz/openbmc_project/time/owner xyz.openbmc_project.Time.Owner \
-       TimeOwner s xyz.openbmc_project.Time.Owner.Owners.Split
-    
-    ### With REST API on remote host
-    curl -c cjar -b cjar -k -H "Content-Type: application/json" -X  PUT  -d \
-       '{"data": "xyz.openbmc_project.Time.Owner.Owners.Split" }' \
-       https://${BMC_IP}/xyz/openbmc_project/time/owner/attr/TimeOwner
-    ```
-    **TimeZone**  
-    According OpenBMC current design that only support UTC TimeZone now, we can use below command to get current support TimeZone on BMC
-    ```
-    timedatectl list-timezones
-    ```
-    **Maintainer**  
-* Tim Lee
-
-### Sensor
+### Sensors
 [phosphor-hwmon](https://github.com/openbmc/phosphor-hwmon) daemon will periodically check the sensor reading to see if it exceeds lower bound or upper bound . If alarm condition is hit, the [phosphor-sel-logger](https://github.com/openbmc/phosphor-sel-logger) handles all sensor events to add new IPMI SEL records to the journal, [phosphor-host-ipmid](https://github.com/Nuvoton-Israel/phosphor-host-ipmid) will convert the journal SEL records to IPMI SEL record format and reply to host.
 
 **Source URL**
-* [https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/configuration](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/configuration)
-* [https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi)
-* [https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/sensors](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/sensors)
-
+* [https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/configuration](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/configuration)
+* [https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi)
+* [https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/sensors](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/sensors)
 
 **How to use**
 
@@ -657,7 +526,7 @@ Management operations:
     
   * Add Sensor Configuration File
   
-    Each sensor **temperature**, **adc**, **fan**, **peci** and **power** has a [hwmon config file](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/sensors/phosphor-hwmon/obmc/hwmon/ahb/apb) and [ipmi sdr config file](https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/configuration/olympus-nuvoton-yaml-config/olympus-nuvoton-ipmi-sensors.yaml) that defines the sensor name and its warning or critical thresholds. These files are located under **recipes-phosphor/sensors/phosphor-hwmon%/obmc/hwmon/apb/** and **recipes-phosphor/configuration/olympus-nuvoton-yaml-config/olympus-nuvoton-ipmi-sensors.yaml**.  
+    Each sensor **temperature**, **adc**, **fan**, **peci** and **power** has a [hwmon config file](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/sensors/phosphor-hwmon/obmc/hwmon/ahb/apb) and [ipmi sdr config file](https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/configuration/olympus-nuvoton-yaml-config/olympus-nuvoton-ipmi-sensors.yaml) that defines the sensor name and its warning or critical thresholds. These files are located under **recipes-phosphor/sensors/phosphor-hwmon%/obmc/hwmon/apb/** and **recipes-phosphor/configuration/olympus-nuvoton-yaml-config/olympus-nuvoton-ipmi-sensors.yaml**.  
 
     Below is hwmon config for a LM75 sensor on BMC. The sensor type is **temperature** and its name is **bmc_card**. It has warning and critical thresholds for **upper** and **lower** bound.
       ```
@@ -760,14 +629,14 @@ Management operations:
 
 * Stanley Chu
 
-### LED
+### LED Manager
 <img align="right" width="30%" src="https://raw.githubusercontent.com/NTC-CCBG/snapshots/master/openbmc/ServerLed.PNG">  
 
 Turning on ServerLED via WebUI will make **identify** leds on BMC start blinking,
  and **heartbeat** will start blinkling after BMC booted.
 
 **Source URL**
-* [https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/leds](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/leds)
+* [https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/leds](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/leds)
 
 **How to use**
 * Add EnclosureIdentify in LED [config file](https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/leds/olympus-nuvoton-led-manager-config/led.yaml)
@@ -794,138 +663,6 @@ Turning on ServerLED via WebUI will make **identify** leds on BMC start blinking
 * Stanley Chu
 
 
-### BIOS POST Code
-In NPCM750, we support a FIFO for monitoring BIOS POST Code. Typically, this feature is used by the BMC to "watch" host boot progress via port 0x80 writes made by the BIOS during the boot process.
-
-**Source URL**
-
-This is a patch for enabling BIOS POST Code feature in [phosphor-host-postd](https://github.com/openbmc/phosphor-host-postd) on Nuvoton's NPCM750.
-
-* [https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/host/phosphor-host-postd_%25.bbappend](https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/host/phosphor-host-postd_%25.bbappend)
-
-**How to use**
-
-* Execute BIOS POST Code test program by command in BMC
-  ```
-  snooper
-  ```
-
-  This command will trigger snooper test program to record BIOS POST Code from port 0x80 of host and save to file with timestamp filename in BMC for each host power on or reset.
-  > _Saved filename format example: 2019_4_30_11_52_35_ON_
-
-* Server Power on
-
-  Press `Power on` button from `Server control` ->`Server power operations` of WebUI.
-  During server power on, snooper test program will print received BIOS POST Code on screen and record to file in BMC at the same time.
-  > _Snooper test program print received BIOS POST Code example:_
-    > _recv: 0x3
-        recv: 0x2
-        recv: 0x7_
-
-**phosphor-post-code-manager**
-
-* This daemon [phosphor-post-code-manager](https://github.com/openbmc/phosphor-post-code-manager) will monitors post code posted on dbus interface /xyz/openbmc_project/state/boot/raw by snoopd daemon [phosphor-host-postd](https://github.com/openbmc/phosphor-host-postd).
-
-* Every cycle post codes are saved as file in **/var/lib/phosphor-post-code-manager** on BMC.
-  ```
-  "1" file is saved all post codes for cycle 1
-  "2" file is saved all post codes for cycle 2
-  "CurrentBootCycleIndex" file is saved the current boot cycle number
-  "CurrentBootCycleCount" file is saved the current boot cycle count
-  ```
-
-* GetPostCodes
-
-  Method to get the cached post codes of the indicated boot cycle.
-  Return an array of post codes of one boot cycle.  
-  Get boot cycle 1 post codes by busctl:
-  > _busctl call xyz.openbmc_project.State.Boot.PostCode /xyz/openbmc_project/State/Boot/PostCode xyz.openbmc_project.State.Boot.PostCode GetPostCodes q 1_
-
-* GetPostCodesWithTimeStamp
-
-  Method to get the cached post codes of the indicated boot cycle with timestamp.
-  Return an array of post codes and timestamp in microseconds since epoch.  
-  Get boot cycle 1 post codes with timestamp by busctl:
-  > _busctl call xyz.openbmc_project.State.Boot.PostCode /xyz/openbmc_project/State/Boot/PostCode xyz.openbmc_project.State.Boot.PostCode GetPostCodesWithTimeStamp q 1_
-
-* Get POST codes through Redfish
-
-  BIOS Power-On Self-Test (POST) codes are exposed on DBUS but not currently over Redfish. This describes a method to expose the BIOS POST codes over the Redfish interface using the logging service.  
-  Get boot cycle 1 post codes by Redfish URL for example:
-  > _[https://{BMC_IP}/redfish/v1/Systems/system/LogServices/PostCodes/Entries](https://{BMC_IP}/redfish/v1/Systems/system/LogServices/PostCodes/Entries)_
-
-**Maintainer**
-* Tim Lee
-
-### FRU
-<img align="right" width="30%" src="https://cdn.rawgit.com/NTC-CCBG/snapshots/cab7306/openbmc/fru.png">
-
-Field Replaceable Unit. The FRU Information is used to primarily to provide “inventory” information about the boards that the FRU Information Device is located on. In NPCM750, we connect EEPROM component as FRU Information Device to support this feature. Typically, this feature is used by the BMC to "monitor" host server health about H/W copmonents status.
-
-**Source URL**
-
-This is a patch for enabling FRU feature in [phosphor-impi-fru](https://github.com/openbmc/ipmi-fru-parser) on Nuvoton's NPCM750.
-
-* [https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi/phosphor-ipmi-fru_%25.bbappend](https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi/phosphor-ipmi-fru_%25.bbappend)
-
-**How to use**
-* Modify DTS settings of EEPROM for FRU.
-  For example about DTS **nuvoton-npcm750-evb.dts**:
-  ```
-  i2c4: i2c@84000 {
-      #address-cells = <1>;
-      #size-cells = <0>;
-      bus-frequency = <100000>;
-      status = "okay";
-      eeprom@54 {
-          compatible = "atmel,24c64";
-          reg = <0x54>;
-      };
-  };
-  ```
-
-  According DTS modification, you also need to remember modify your EEPROM file description content about **SYSFS_PATH** and **FRUID**. Below is example for our EEPROM file description **[motherboard](https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi/phosphor-ipmi-fru/obmc/eeproms/system/chassis/motherboard)**:
-  ```
-  SYSFS_PATH=/sys/bus/i2c/devices/3-0050/eeprom
-  FRUID=1
-  ```
-  **SYSFS_PATH** is the path according your DTS setting and **FRUID** is arbitrary number but need to match **Fruid** in **[config.yaml](https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/configuration/olympus-nuvoton-yaml-config/olympus-nuvoton-ipmi-fru.yaml)** file. Below is example for when **Fruid** set as 1:
-  ```
-  1: #Fruid
-    /system/chassis/motherboard:
-      entityID: 7
-      entityInstance: 1
-      interfaces:
-        xyz.openbmc_project.Inventory.Decorator.Asset:
-          BuildDate:
-            IPMIFruProperty: Mfg Date
-            IPMIFruSection: Board
-          PartNumber:
-            IPMIFruProperty: Part Number
-            IPMIFruSection: Board
-          Manufacturer:
-            IPMIFruProperty: Manufacturer
-            IPMIFruSection: Board
-          SerialNumber:
-            IPMIFruProperty: Serial Number
-            IPMIFruSection: Board
-        xyz.openbmc_project.Inventory.Item:
-          PrettyName:
-            IPMIFruProperty: Name
-            IPMIFruSection: Board
-        xyz.openbmc_project.Inventory.Decorator.Revision:
-          Version:
-            IPMIFruProperty: FRU File ID
-            IPMIFruSection: Board
-  ```
-
-* Server health
-
-  Select `Server health` -> `Hardware status` on **Web-UI** will show FRU Board Info/Chassis Info/Product Info area.
-
-**Maintainer**
-* Tim Lee
-
 ### Fan PID Control
 <img align="right" width="30%" src="https://cdn.rawgit.com/NTC-CCBG/snapshots/e12e9dd/openbmc/fan_stepwise_pwm.png">
 <img align="right" width="30%" src="https://cdn.rawgit.com/NTC-CCBG/snapshots/8fc19a1/openbmc/fan_rpms.png">
@@ -936,7 +673,7 @@ In NPCM750, we have two PWM modules and support eight PWM signals to control fan
 
 * [https://github.com/openbmc/phosphor-pid-control](https://github.com/openbmc/phosphor-pid-control)
 * [https://github.com/openbmc/phosphor-hwmon](https://github.com/openbmc/phosphor-hwmon)
-* [https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/fans/phosphor-pid-control](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/fans/phosphor-pid-control)
+* [https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/fans/phosphor-pid-control](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/fans/phosphor-pid-control)
 
 **How to use**
 
@@ -1088,14 +825,419 @@ In order to automatically apply accurate and responsive correction to a fan cont
     ```
     + **ExecStopPost** that means an additional commands that are executed after the service is stopped.
 
+**Maintainer**
+* Tim Lee
+
+### Event Policy
+
+phosphor-dbus-monitor service can watch on specific dbus objects/properties and perform predefined event callbacks when the property state has changed or meets the condition defined in config file.  
+
+**Source URL**
+* [phosphor-dbus-monitor](https://github.com/openbmc/phosphor-dbus-monitor)
+* [phosphor-snmp](https://github.com/openbmc/phosphor-snmp)
+
+**Event Callbacks**
+
+The event callbacks can be the following actions. Logging to journal or elog, calling d-bus methods, or sending snmp traps. Here is an example that log to journal and send d-bus message to shutdown host when the specific temperature sensor reaches the critical high threshold.
+
+* [Example config](https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-runbmc-nuvoton/recipes-phosphor/configuration/runbmc-nuvoton-yaml-config/runbmc-nuvoton-dbus-monitor-config.yaml)
+
+**SNMP trap**
+
+**How to use** 
+1. Install snmp trap receiver on the management server. Refer to the [link](https://blog.cadena-it.com/linux-tips-how-to/snmp-trap-receiver-with-ubuntu/) for the installation.
+    * Copy [BMC notification MIB](https://github.com/openbmc/phosphor-snmp/blob/master/mibs/NotificationMIB.txt) to `/usr/share/snmp/mibs`.
+    * Run snmptrapd with -m option to load custom MIB
+    ```
+    snmptrapd -m OPENBMC-NOTIFICATION-MIB -Lf /var/log/snmptrap.log -f
+    ```
+2. Specify snmp manager ip/port in Openbmc WebUI
+   ```
+    Server configuration
+     -> SNMP settings
+       -> Add Managers
+          -> enter the snmp manger ip and port(default is 162)
+    ```
+3. Check snmp trap log in snmp manager.
+   * /var/log/snmptrap.log
+   * the OIDs in log file will be translated to human readable string defined in MIB
+   * Example:
+   ```
+   TRAP2, SNMP v2c, community publicDU Attribute/Value Pair Array:
+   SNMPv2-SMI::snmpModules.1.1.4.1.0 = OID: OPENBMC-NOTIFICATION-MIB::obmcErrorNotification
+   OPENBMC-NOTIFICATION-MIB::obmcErrorID = Gauge32: 135
+   OPENBMC-NOTIFICATION-MIB::obmcErrorTimestamp = Opaque: UInt64: 780329535445925888
+   OPENBMC-NOTIFICATION-MIB::obmcErrorSeverity = INTEGER: 3
+   OPENBMC-NOTIFICATION-MIB::obmcErrorMessage = STRING:   "xyz.openbmc_project.Sensor.Threshold.Error.WarningLow"
+   ```
+
+**Maintainer**
+* Stanley Chu
+
+### Time Sync
+  We provided three ways that user can synchronize the BMC time from network or host.
+
+### NTP Server
+  Network Time Protocol (NTP) is a networking protocol for clock synchronization between computer systems over packet-switched, variable-latency data networks.
+
+  **systemd-timesyncd** is a daemon that has been added for synchronizing the system clock across the network. It implements an **SNTP (Simple NTP)** client. This daemon runs with minimal privileges, and has been hooked up with **systemd-networkd** to only operate when network connectivity is available.
+        
+  The modification time of the file **/var/lib/systemd/timesync/clock** indicates the timestamp of the last successful synchronization (or at least the **systemd build date**, in case synchronization was not possible).
+    
+  **Source URL**
+  * [https://github.com/openbmc/phosphor-time-manager](https://github.com/openbmc/phosphor-time-manager)
+  * [https://github.com/systemd/systemd/tree/master/src/timesync](https://github.com/systemd/systemd/tree/master/src/timesync)
+    
+  **How to use**
+  <img align="right" width="30%" src="https://raw.githubusercontent.com/NTC-CCBG/snapshots/master/openbmc/Time.PNG">
+  * Enable NTP by **Web-UI** `Server configuration`
+      ->`Date and time settings`
+  * Enable NTP by command
+      ```
+      timedatectl set-ntp true  
+      ```
+      >_timedatectl result will show **systemd-timesyncd.service active: yes**_ 
+    
+      If NTP is Enabled and network is Connected (Using **eth1** connect to router), we will see the item **systemd-timesyncd.service active** is **yes** and **System clock synchronized** is **yes**. Thus, system time will sync from NTP server to get current time.
+  * Get NTP status  
+      ```
+      timedatectl  
+      ```
+      >_Local time: Mon 2018-08-27 09:24:51 UTC  
+      >Universal time: Mon 2018-08-27 09:24:51 UTC  
+      >RTC time: n/a  
+      >Time zone: n/a (UTC, +0000)  
+      >**System clock synchronized: yes**  
+      >**systemd-timesyncd.service active: yes**  
+      >RTC in local TZ: no_  
+      
+  * Disable NTP  
+      ```
+      timedatectl set-ntp false  
+      ```
+      >_timedatectl result will show **systemd-timesyncd.service active: no**_  
+      
+  * Using Local NTP server Configuration  
+    When starting, systemd-timesyncd will read the configuration file from **/etc/systemd/timesyncd.conf**, which looks like as below: 
+        >_[Time]  
+        >\#NTP=  
+        >\#FallbackNTP=time1.google.com time2.google.com time3.google.com time4.google.com_  
+    
+    	By default, systemd-timesyncd uses the Google Public NTP servers **time[1-4].google.com**, if no other NTP configuration is available. To add time servers or change the provided ones, **uncomment** the relevant line and list their host name or IP separated by a space. For example, we setup NB windows 10 system as NTP server with IP **192.168.1.128**  
+        >_[Time]  
+        >**NTP=192.168.1.128**  
+    	>\#FallbackNTP=time1.google.com time2.google.com time3.google.com time4.google.com_
+    
+  * BMC connect to local NTP server of windows 10 system  
+      Connect to NB through **eth1** EMAC interface, and set static IP **192.168.1.15**  
+    
+      ```
+      ifconfig eth1 up
+      ifconfig eth1 192.168.1.15
+      ```  
+      >_Note: Before that you need to setup your NTP server (192.168.1.128) on Windows 10 system first_  
+      
+      Modify **/etc/systemd/timesyncd.conf** file on BMC as we mentioned
+        >_[Time]  
+        >**NTP=192.168.1.128**_  
+      
+      Re-start NTP to make effect about our configuration change  
+      ```
+      systemctl restart systemd-timesyncd.service
+      ```  
+      Check status of NTP that show already synced to our local time server 
+      ```
+      systemctl status systemd-timesyncd.service -l --no-pager
+      ```  
+      >_Status: "Synchronized to time server 192.168.1.128:123 (192.168.1.128)."_  
+      
+      Verify **Web-UI** `Server overview`->`BMC time` whether sync from NTP server as same as **timedatectl**. (Note: timedatectl time zone default is UTC, thus you will find the BMC time is UTC+8)
+      ```
+      timedatectl  
+      ```
+      >_Local time: Thu 2018-09-06 07:24:16 UTC  
+      >Universal time: Thu 2018-09-06 07:24:16 UTC  
+      >RTC time: n/a  
+      >Time zone: n/a (UTC, +0000)  
+      >System clock synchronized: yes  
+      >systemd-timesyncd.service active: yes  
+      >RTC in local TZ: no_
+
+  * TimeZone  
+      According OpenBMC current design that only support UTC TimeZone now, we can use below command to get current support TimeZone on BMC
+      ```
+      timedatectl list-timezones
+      ```
+  * Maintainer  
+    * Tim Lee
+
+### Intel PCH Time Sync
+
+  Intel PCH provides read commands that BMC get PCH time over i2c.   
+  If BMC is connected to PCH, you can use this feature to hanle BMC time.
+
+  **Source URL**
+  * [https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/datetime/pch-time-sync](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/datetime/pch-time-sync)
+
+  **How to use**
+
+  1. Please check the [i2c bus and slave address](https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/datetime/pch-time-sync/pch-time-sync.cpp#L94)
+  2. The serivce will auto sync pch time during openbmc startup.
+
+  **Maintainer**
+  * Brain Ma
+
+### Intel Node Manager Get SEL Time
+
+  Intel Node Manager is synchronizing periodically its internal clock with system RTC.  
+  It also provides a get sel command that BMC can get time over IPMB interface.   
+
+  **Source URL**
+  * [https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/datetime/bmc-time-sync](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/datetime/bmc-time-sync)
+
+  **How to use**
+  1. Please follow [Host Power Budget Control](#host-power-budget-control) to setup IPMB interface.
+  2. The serivce will auto get time via get sel time command during openbmc startup.
+
+  **Maintainer**
+  * Brain Ma
+
+### Inventory
+
+### IPMI FRU
+<img align="right" width="30%" src="https://cdn.rawgit.com/NTC-CCBG/snapshots/cab7306/openbmc/fru.png">
+
+Field Replaceable Unit. The FRU Information is used to primarily to provide “inventory” information about the boards that the FRU Information Device is located on. In NPCM750, we connect EEPROM component as FRU Information Device to support this feature. Typically, this feature is used by the BMC to "monitor" host server health about H/W copmonents status.
+
+**Source URL**
+
+* [https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi/phosphor-ipmi-fru_%25.bbappend](https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi/phosphor-ipmi-fru_%25.bbappend)
+
+**How to use**
+* Check DTS settings of EEPROM for FRU.
+  For example about DTS **nuvoton-npcm750-runbmc-olympus.dts**:
+  ```
+  i2c4: i2c@84000 {
+      #address-cells = <1>;
+      #size-cells = <0>;
+      bus-frequency = <100000>;
+      status = "okay";
+      eeprom@54 {
+          compatible = "atmel,24c64";
+          reg = <0x54>;
+      };
+  };
+  ```
+
+  According DTS modification, you also need to remember modify your EEPROM file description content about **SYSFS_PATH** and **FRUID**. Below is example for our EEPROM file description **[motherboard](https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi/phosphor-ipmi-fru/obmc/eeproms/system/chassis/motherboard)**:
+  ```
+  SYSFS_PATH=/sys/bus/i2c/devices/4-0054/eeprom
+  FRUID=1
+  ```
+  **SYSFS_PATH** is the path according your DTS setting and **FRUID** is arbitrary number but need to match **Fruid** in **[config.yaml](https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/configuration/olympus-nuvoton-yaml-config/olympus-nuvoton-ipmi-fru.yaml)** file. Below is example for when **Fruid** set as 1:
+  ```
+  1: #Fruid
+    /system/chassis/motherboard:
+      entityID: 7
+      entityInstance: 1
+      interfaces:
+        xyz.openbmc_project.Inventory.Decorator.Asset:
+          BuildDate:
+            IPMIFruProperty: Mfg Date
+            IPMIFruSection: Board
+          PartNumber:
+            IPMIFruProperty: Part Number
+            IPMIFruSection: Board
+          Manufacturer:
+            IPMIFruProperty: Manufacturer
+            IPMIFruSection: Board
+          SerialNumber:
+            IPMIFruProperty: Serial Number
+            IPMIFruSection: Board
+        xyz.openbmc_project.Inventory.Item:
+          PrettyName:
+            IPMIFruProperty: Name
+            IPMIFruSection: Board
+        xyz.openbmc_project.Inventory.Decorator.Revision:
+          Version:
+            IPMIFruProperty: FRU File ID
+            IPMIFruSection: Board
+  ```
+
+* Server health
+
+  Select `Server health` -> `Hardware status` on **Web-UI** will show FRU Board Info/Chassis Info/Product Info area.
+
+**Maintainer**
+* Tim Lee
+
+### Power Supply Unit Inventory
+
+The PMBus protocol provides commands for the storage and retrieval of the device
+manufacturer’s inventory information.  
+Nuvoton provides a shell script based deaemon that can create `PSU` inventory during OpenBMC startup.
+
+```
+"PowerSupplies": [
+    {
+        "@odata.id": "/redfish/v1/Chassis/chassis/Power#/PowerSupplies/0",
+        "EfficiencyPercent": 90,
+        "Manufacturer": "FlexPower",
+        "MemberId": "powersupply0",
+        "Model": "MIS-S-1020",
+        "Name": "powersupply0",
+        "PartNumber": "FPS-213-D0000293-101",
+        "PowerInputWatts": 59.0,
+        "PowerOutputWatts": 44.0,
+        "SerialNumber": "",
+        "Status": {
+            "Health": "OK",
+            "State": "Enabled"
+        }
+    }
+],
+```
+**Source URL**
+
+[https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/power/first-boot-set-psu](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/power/first-boot-set-psu)
+
+**How to use**
+
+After service started, you can see a new item `Powersupply 0` in `WebUI`->`Health`->`Hardware status` page.  
+And you can get `Powersupply 0` inventory information from /redfish/v1/Chassis/chassis/Power#/PowerSupplies/0.
+
+
+**Maintainer**
+* Joseph Liu
+
+### Network
+
+### VLAN
+
+VLAN (Virtual Local Area Networks) is any broadcast domain that is partitioned and isolated in a computer network at the data link layer (OSI layer 2). VLANs work by applying tags to network frames and handling these tags in networking systems – creating the appearance and functionality of network traffic that is physically on a single network but acts as if it is split between separate networks.
+
+VLANs allow network administrators to group hosts together even if the hosts are not directly connected to the same network switch. Because VLAN membership can be configured through software, this can greatly simplify network design and deployment.
+
+To subdivide a network into VLANs, one configures network equipment. Simpler equipment can partition only per physical port (if at all), in which case each VLAN is connected with a dedicated network cable. More sophisticated devices can mark frames through VLAN tagging, so that a single interconnect (trunk) may be used to transport data for multiple VLANs.
+
+For more information, please refer to [https://en.wikipedia.org/wiki/Virtual_LAN](https://en.wikipedia.org/wiki/Virtual_LAN).
+
+**Source URL**
+
+* [https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-kernel/linux](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-kernel/linux)
+* [https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/network](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/network)
+
+For users who prefer ipmi network utilization via VLAN, please refer to the following section **How to use**.
+
+**How to use**
+
+1. Configure VLAN setting of the Olympus platform by inputting the following commands on the Olympus debug console. Please replace the IP addresses mentioned below according to your configuration.
+    ```
+    ip link add link eth1 name eth1.1 type vlan id 1
+    ip addr add 192.168.1.4/24 dev eth1.1
+    ip link set up eth1.1
+    ```
+    If the user prefers the REST method via a remote PC, the commands are provided below as an example.
+    ```
+    export bmc=192.168.0.3
+    export token=`curl -k -H "Content-Type: application/json" -X POST https://${bmc}/login -d '{"username" :  "root", "password" :  "0penBmc"}' | grep token | awk '{print $2;}' | tr -d '"'`
+    curl -k -H "X-Auth-Token: $token" -H "Content-Type: application/json" -X POST -d '{"data":["eth1",1] }' https://${bmc}/xyz/openbmc_project/network/action/VLAN
+    curl -k -H "X-Auth-Token: $token" -H "Content-Type: application/json" -X POST -d '{"data": ["xyz.openbmc_project.Network.IP.Protocol.IPv4", "192.168.1.4",24,"192.168.1.1"] }' https://${bmc}/xyz/openbmc_project/network/eth1_1/action/IP
+    ```
+
+    The expected response is listed below as an example.
+    ```
+    {
+      "data": "/xyz/openbmc_project/network/eth1_1/ipv4/a3f185f1",
+      "message": "200 OK",
+      "status": "ok"
+    }
+    ```
+
+    For more information, please refer to [https://github.com/openbmc/phosphor-networkd/blob/master/docs/Network-Configuration.md](https://github.com/openbmc/phosphor-networkd/blob/master/docs/Network-Configuration.md).
+
+2. Prepare a PC which runs Ubuntu (for example) or any OS which supports VLAN. The Olympus device and the PC are connected to an unmanaged network switch.  
+
+   Please input the following commands in a opened terminal emulator with a privileged user account to configure the VLAN setting of the Ubuntu PC.  
+
+   Here the network interface enp24s0f3 of the Ubuntu PC is used as an example. 
+    ```
+    sudo modprobe 8021q
+    sudo ip link add link enp24s0f3 enp24s.1 type vlan id 1
+    sudo ip addr add 192.168.1.5/24 dev enp24s.1
+    sudo ip link set up enp24s.1
+    ```
+
+3. Ping either from Olympus or the PC to the other device.
+
+**Maintainer**
+* Tyrone Ting
+
+### BIOS POST Code
+In NPCM750, we support a FIFO for monitoring BIOS POST Code. Typically, this feature is used by the BMC to "watch" host boot progress via port 0x80 writes made by the BIOS during the boot process.
+
+**Source URL**
+
+This is a patch for enabling BIOS POST Code feature in [phosphor-host-postd](https://github.com/openbmc/phosphor-host-postd) on Nuvoton's NPCM750.
+
+* [https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/host/phosphor-host-postd_%25.bbappend](https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/host/phosphor-host-postd_%25.bbappend)
+
+**How to use**
+
+* Execute BIOS POST Code test program by command in BMC
+  ```
+  snooper
+  ```
+
+  This command will trigger snooper test program to record BIOS POST Code from port 0x80 of host and save to file with timestamp filename in BMC for each host power on or reset.
+  > _Saved filename format example: 2019_4_30_11_52_35_ON_
+
+* Server Power on
+
+  Press `Power on` button from `Server control` ->`Server power operations` of WebUI.
+  During server power on, snooper test program will print received BIOS POST Code on screen and record to file in BMC at the same time.
+  > _Snooper test program print received BIOS POST Code example:_
+    > _recv: 0x3
+        recv: 0x2
+        recv: 0x7_
+
+**phosphor-post-code-manager**
+
+* This daemon [phosphor-post-code-manager](https://github.com/openbmc/phosphor-post-code-manager) will monitors post code posted on dbus interface /xyz/openbmc_project/state/boot/raw by snoopd daemon [phosphor-host-postd](https://github.com/openbmc/phosphor-host-postd).
+
+* Every cycle post codes are saved as file in **/var/lib/phosphor-post-code-manager** on BMC.
+  ```
+  "1" file is saved all post codes for cycle 1
+  "2" file is saved all post codes for cycle 2
+  "CurrentBootCycleIndex" file is saved the current boot cycle number
+  "CurrentBootCycleCount" file is saved the current boot cycle count
+  ```
+
+* GetPostCodes
+
+  Method to get the cached post codes of the indicated boot cycle.
+  Return an array of post codes of one boot cycle.  
+  Get boot cycle 1 post codes by busctl:
+  > _busctl call xyz.openbmc_project.State.Boot.PostCode /xyz/openbmc_project/State/Boot/PostCode xyz.openbmc_project.State.Boot.PostCode GetPostCodes q 1_
+
+* GetPostCodesWithTimeStamp
+
+  Method to get the cached post codes of the indicated boot cycle with timestamp.
+  Return an array of post codes and timestamp in microseconds since epoch.  
+  Get boot cycle 1 post codes with timestamp by busctl:
+  > _busctl call xyz.openbmc_project.State.Boot.PostCode /xyz/openbmc_project/State/Boot/PostCode xyz.openbmc_project.State.Boot.PostCode GetPostCodesWithTimeStamp q 1_
+
+* Get POST codes through Redfish
+
+  BIOS Power-On Self-Test (POST) codes are exposed on DBUS but not currently over Redfish. This describes a method to expose the BIOS POST codes over the Redfish interface using the logging service.  
+  Get boot cycle 1 post codes by Redfish URL for example:
+  > _[https://{BMC_IP}/redfish/v1/Systems/system/LogServices/PostCodes/Entries](https://{BMC_IP}/redfish/v1/Systems/system/LogServices/PostCodes/Entries)_
 
 **Maintainer**
 * Tim Lee
 
 
-## IPMI / DCMI
-
-### SOL IPMI
+### IPMI SOL
 <img align="right" width="30%" src="https://cdn.rawgit.com/NTC-CCBG/snapshots/8afa8a2/openbmc/sol_ipmi_win10.PNG">
 
 The Serial over LAN (SoL) via IPMI redirects the output of the server’s serial port to a command/terminal window on your workstation.
@@ -1150,16 +1292,16 @@ Please refer to [IPMI Website](https://www.intel.com/content/www/us/en/products/
 <img align="right" width="30%" src="https://cdn.rawgit.com/NTC-CCBG/snapshots/dfdfd04/openbmc/message_bridge.png">
 
 IPMI daemon would set or get D-Bus property to/from path like: `/xyz/openbmc_project/control/host0/power_cap` when get DCMI command from IPMI tool via network or LPC.
-[Phosphor-node-manager-proxy](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi/phosphor-node-manager-proxy) will handle the property change and present the property value.
+[Phosphor-node-manager-proxy](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi/phosphor-node-manager-proxy) will handle the property change and present the property value.
 Once the **phosphor-node-manager-proxy** property changed, it will prepare IPMB package data and call D-Bus method "sendRequest" to D-Bus path: `/xyz/openbmc_project/Ipmi/Channel/Ipmb`.
 Finally, IPMB gets the request and constructs I2C command from the request, then sends the I2C command to ME(Intel Management Engine) for getting information which controlled by ME.
 
-The patch integrates the [ipmid](https://github.com/openbmc/phosphor-host-ipmid), [phosphor-node-manager-proxy](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi/phosphor-node-manager-proxy) and [ipmbbridge](https://github.com/openbmc/ipmbbridge) projects.
+The patch integrates the [ipmid](https://github.com/openbmc/phosphor-host-ipmid), [phosphor-node-manager-proxy](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi/phosphor-node-manager-proxy) and [ipmbbridge](https://github.com/openbmc/ipmbbridge) projects.
 
 
 **Source URL**
 
-* [https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi)
+* [https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi)
 
 **How to use**
 
@@ -1169,23 +1311,16 @@ The patch integrates the [ipmid](https://github.com/openbmc/phosphor-host-ipmid)
       {
         "type": "me",
         "master-path": "/dev/i2c-5",
-        "slave-path": "/sys/bus/i2c/devices/5-1010/slave-mqueue",
+        "slave-path": "/dev/ipmb-5",
         "bmc-addr": 32,
         "remote-addr": 44
       }
     ]
     ```
 
-2. Deploy **phosphor-node-manager-proxy** from Intel-BMC project [node-manager](https://github.com/Intel-BMC/node-manager), because the package still not merge in OpenBMC project. And modify the interface define if need. The patch [0001-change-the-value-number-from-int64-to-double.patch](https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi/phosphor-node-manager-proxy/0001-change-the-value-number-from-int64-to-double.patch) for node manager is change the property type that make bmcweb can get the sensor value on web UI.
+2. Deploy **phosphor-node-manager-proxy** from Intel-BMC project [node-manager](https://github.com/Intel-BMC/node-manager), because the package still not merge in OpenBMC project. And modify the interface define if need. There are few patches [Patch](https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi/phosphor-node-manager-proxy) for node manager that makes bmcweb can get the sensor value.
 
-3. Install the ipmitool in host OS, here using Ubuntu 18.04 as example.
-
-    * Using apt command install ipmitool.
-      ```
-      sudo apt install ipmitool
-      ```
-
-4. Test power budget control.
+3. Test power budget control.
 
     * Send DCMI commnad via LPC
       ```
@@ -1218,6 +1353,84 @@ The patch integrates the [ipmid](https://github.com/openbmc/phosphor-host-ipmid)
 * Tyrone Ting
 * Stanley Chu
 
+### PECI
+
+#### Intel Crash Dump
+<img align="right" width="30%" src="https://cdn.rawgit.com/NTC-CCBG/snapshots/5f39468/openbmc/crashdump.png">
+
+The Intel Crash Dump feature facilitates debug of an IERR triggered and leverages uncore hardware features accessible via the PECI interface to provide a scheme to dump the Caching agent (Cbo) Table of Requests (TOR) structure.
+
+**Source URL**
+
+This source code is implements CrashDump for the Whitley platform and supports the Ice Lake Server and Cooper Lake Server processors in private github [Intel-BMC/crashdump](https://github.com/Intel-BMC/crashdump/) that collects debug data from the processors over the PECI bus when executed.
+
+**How to use**
+
+* There are two ways to execute Crash Dump
+  ```
+  On-Demand (Trigger by Redfish)
+  ```
+
+  You can use below Redfish curl to trigger Crash Dump by On-Demand POST action.  
+  This action is used to trigger a new On-Demand Crash Dump is returned immediately.
+  > _/redfish/v1/Systems/system/LogServices/Crashdump/Actions/Oem/Crashdump.OnDemand_
+
+  Eventually, there is crashdump file will exist in /tmp/crashdumps folder on BMC.  
+  And **trigger_type** content in crashdump file is **On-Demand** that means the Crash Dump daemon be called by On-Demand.
+
+  You can use below busctl command to verify Crash Dump by On-Demand.
+  > _busctl call com.intel.crashdump /com/intel/crashdump/0 org.freedesktop.DBus.Properties Get ss "com.intel.crashdump" "Log"_
+
+  ```
+  Direct call upon detection of an Error Event (Trigger by Intel Host Error Monitor)
+  ```
+
+  The Intel Host Error Monitor [Intel-BMC/host-error-monitor](https://github.com/Intel-BMC/host-error-monitor) daemon is use to detect an host error event then trigger Crash Dump dameon be executed. And **trigger_type** content in crashdump file is **IERR** that means the Crash Dump daemon be called upon the BMC detecting an host error event.
+
+* There are two ways to get crashdump file
+  ```
+  Redish
+  ```
+
+  Redfish url to get crashdump entries.  
+  You can get crashdump file **crashdump_xxx.json** by clicking **Message** link directly.
+  > _https://{bmc_ip}/redfish/v1/Systems/system/LogServices/Crashdump/Entries_
+
+  ```
+  WebUI
+  ```
+
+  Select `Event log` and select `Oem` in `Select system log type` on **WebUI**.  
+  You can get crashdump file by clicking **Export** button.
+
+**CScripts Crash Dump**
+
+  CScripts (Customer Scripts) are a collection of scripts provided by Intel to assist customers with platform debug and validation. This is another method use CScripts function crashdump() to collect crash records manually. Use RunBMC Olympus as example:
+
+**How to use**
+
+* Configuring ASD on BMC and OpenIPC on Host (refer to [ASD](#asd))
+
+* Inject 3Strike Error
+
+  Injects a Three Strike Counter timeout, resulting in Machine Check Exception (MCE) and IERR.  
+  Execute ei.injectThreeStrike command in cscripts folder
+    > _>>> ei.injectThreeStrike_
+
+* Collect crash records
+
+  The crashdump feature allows the user to retrieve internal state of the cores after a 3Strike failure.  
+  Collected data will be stored in JSON format name as **crashdump.json**  
+  Execute crashdump() command in cscripts folder
+    > _>>> crashdump()_
+
+  The crashdump_decode_analyze feature allows the user to analyze any crashdump JSON file.  
+  Analysis data will be stored in JSON format name as **crasdump_decoded.json**  
+  Execute crashdump() command in cscripts folder
+    > _>>> crashdump_decode_analyze(crashdump.json)_
+
+**Maintainer**
+* Tim Lee
 
 # LDAP for User Management
 <img align="right" width="30%" src="https://cdn.rawgit.com/NTC-CCBG/snapshots/b6fdec0d/openbmc/ldap-login-via-ssh.png">
@@ -1231,14 +1444,14 @@ A common use of LDAP is to provide a central place to store usernames and passwo
 
 **Source URL**
 
-* [https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-phosphor/nuvoton-layer/dlc/ldap-support-user-management](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-phosphor/nuvoton-layer/dlc/ldap-support-user-management)
+* [https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-phosphor/nuvoton-layer/dlc/ldap-support-user-management](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-phosphor/nuvoton-layer/dlc/ldap-support-user-management)
 * [https://github.com/Nuvoton-Israel/openbmc-util/tree/master/ldap_server](https://github.com/Nuvoton-Israel/openbmc-util/tree/master/ldap_server)
 
 ### LDAP Server Setup
 
 **How to use**
 
-1. The user is expected to know how to follow the instructions in the section **Setting up your OpenBMC project** in [Nuvoton-Israel/openbmc](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc) to build and program an OpenBMC image into NPCM750 platforms.
+1. The user is expected to know how to follow the instructions in the section **Setting up your OpenBMC project** in [Nuvoton-Israel/openbmc](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8) to build and program an OpenBMC image into NPCM750 platforms.
     > _Prepare a PC which builds OpenBMC. (called the build machine hereafter)_  
     > _The user is also expected to have knowledge of LDAP and its operations._
 
@@ -1355,7 +1568,7 @@ A common use of LDAP is to provide a central place to store usernames and passwo
 4. Setup LDAP client configuration on BMC.
 
     * Open a terminal in the build machine and navigate to the directory which contains OpenBMC source codes. The directory is called **OPENBMCDIR** hereafter.
-      + Copy all directories and their containing files from [https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-phosphor/nuvoton-layer/dlc/ldap-support-user-management](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-phosphor/nuvoton-layer/dlc/ldap-support-user-management) under OPENBMCDIR/meta-quanta/meta-runbmc-nuvoton directory according to their default hierarchy.
+      + Copy all directories and their containing files from [https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-phosphor/nuvoton-layer/dlc/ldap-support-user-management](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-phosphor/nuvoton-layer/dlc/ldap-support-user-management) under OPENBMCDIR/meta-quanta/meta-runbmc-nuvoton directory according to their default hierarchy.
         > _Nuvoton RunBMC Olympus is used for the LDAP demonstration so the corresponding runbmc software layer is applied here._
 
     * Update OPENBMCDIR/meta-quanta/meta-runbmc-nuvoton/recipes-support/nss-pam-ldapd/files/nslcd.conf. (optional)
@@ -1573,7 +1786,7 @@ JTAG master is implemented on BMC to facilitate debugging host CPU or programmin
 * [https://github.com/Intel-BMC/asd](https://github.com/Intel-BMC/asd)
 * [https://github.com/Nuvoton-Israel/openbmc-util/tree/master/loadsvf](https://github.com/Nuvoton-Israel/openbmc-util/tree/master/loadsvf)
 
-### ASD
+### Intel At-Scale Debug
 <img align="right" width="30%" src="https://raw.githubusercontent.com/NTC-CCBG/snapshots/870d09e/openbmc/asd.png">
 The Intel® At-Scale Debug feature allows for using any host system to run the Debug tool stack while connecting to the target system across the network. The target system must have a BMC which has physical connectivity to the JTAG pins as a minimum requirement of functionality.    
 
@@ -1628,59 +1841,14 @@ loadsvf -d /dev/jtag0 -s firmware.svf
 **Maintainer**
 * Stanley Chu
 
-
-## System Event Policy
-
-phosphor-dbus-monitor service can watch on specific dbus objects/properties and perform predefined event callbacks when the property state has changed or meets the condition defined in config file.  
-
-**Source URL**
-* [phosphor-dbus-monitor](https://github.com/openbmc/phosphor-dbus-monitor)
-* [phosphor-snmp](https://github.com/openbmc/phosphor-snmp)
-
-
-### Event Callbacks
-The event callbacks can be the following actions. Logging to journal or elog, calling d-bus methods, or sending snmp traps. Here is an example that log to journal and send d-bus message to shutdown host when the specific temperature sensor reaches the critical high threshold.
-
-* [Example config](https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-quanta/meta-runbmc-nuvoton/recipes-phosphor/configuration/runbmc-nuvoton-yaml-config/runbmc-nuvoton-dbus-monitor-config.yaml)
-
-### SNMP trap
-**How to use** 
-1. Install snmp trap receiver on the management server. Refer to the [link](https://blog.cadena-it.com/linux-tips-how-to/snmp-trap-receiver-with-ubuntu/) for the installation.
-    * Copy [BMC notification MIB](https://github.com/openbmc/phosphor-snmp/blob/master/mibs/NotificationMIB.txt) to `/usr/share/snmp/mibs`.
-    * Run snmptrapd with -m option to load custom MIB
-    ```
-    snmptrapd -m OPENBMC-NOTIFICATION-MIB -Lf /var/log/snmptrap.log -f
-    ```
-2. Specify snmp manager ip/port in Openbmc WebUI
-   ```
-    Server configuration
-     -> SNMP settings
-       -> Add Managers
-          -> enter the snmp manger ip and port(default is 162)
-    ```
-3. Check snmp trap log in snmp manager.
-   * /var/log/snmptrap.log
-   * the OIDs in log file will be translated to human readable string defined in MIB
-   * Example:
-   ```
-   TRAP2, SNMP v2c, community publicDU Attribute/Value Pair Array:
-   SNMPv2-SMI::snmpModules.1.1.4.1.0 = OID: OPENBMC-NOTIFICATION-MIB::obmcErrorNotification
-   OPENBMC-NOTIFICATION-MIB::obmcErrorID = Gauge32: 135
-   OPENBMC-NOTIFICATION-MIB::obmcErrorTimestamp = Opaque: UInt64: 780329535445925888
-   OPENBMC-NOTIFICATION-MIB::obmcErrorSeverity = INTEGER: 3
-   OPENBMC-NOTIFICATION-MIB::obmcErrorMessage = STRING:   "xyz.openbmc_project.Sensor.Threshold.Error.WarningLow"
-   ```
-
-**Maintainer**
-* Stanley Chu
-
-## In-Band Firmware Update
+## BMC / BIOS In-Band Firmware Update
 This is a secure flash update mechanism to update HOST/BMC firmware via LPC/PCI.
 
 **Source URL**
 
-* [https://github.com/Nuvoton-Israel/phosphor-ipmi-flash](https://github.com/Nuvoton-Israel/phosphor-ipmi-flash)
-* [https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-phosphor/nuvoton-layer/recipes-phosphor/ipmi/phosphor-ipmi-flash_%25.bbappend](https://github.com/Nuvoton-Israel/openbmc/blob/runbmc/meta-phosphor/nuvoton-layer/recipes-phosphor/ipmi/phosphor-ipmi-flash_%25.bbappend)
+* [https://github.com/openbmc/phosphor-ipmi-flash](https://github.com/openbmc/phosphor-ipmi-flash)
+* [https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-olympus-nuvoton/ipmi-bios-update](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-olympus-nuvoton/ipmi-bios-update)
+* [https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-olympus-nuvoton/ipmi-bmc-update](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/recipes-olympus-nuvoton/ipmi-bmc-update)
 
 ### HOST Tool
 <img align="right" width="30%" src="https://raw.githubusercontent.com/NTC-CCBG/snapshots/322d0d3/openbmc/in-band-fu.png">
@@ -1709,7 +1877,7 @@ make install
 ```
 
 #### Building burn_my_bmc (the host-tool)
-Check out the [phosphor-ipmi-flash source](https://github.com/Nuvoton-Israel/phosphor-ipmi-flash).
+Check out the [phosphor-ipmi-flash source](https://github.com/openbmc/phosphor-ipmi-flash).
 Then run these commands in the source directory.
 If you choose "enable-nuvoton-p2a-vga", then the tool will support LPC and PCI-VGA.
 If you choose "enable-nuvoton-p2a-mbox", then the tool will support LPC and PCI-MailBox
@@ -1782,68 +1950,6 @@ This is an OpenBMC IPMI Library (Handler) for In-Band Firmware Update.
 * Medad CChien
 
 
-## VLAN
-
-VLAN (Virtual Local Area Networks) is any broadcast domain that is partitioned and isolated in a computer network at the data link layer (OSI layer 2). VLANs work by applying tags to network frames and handling these tags in networking systems – creating the appearance and functionality of network traffic that is physically on a single network but acts as if it is split between separate networks.
-
-VLANs allow network administrators to group hosts together even if the hosts are not directly connected to the same network switch. Because VLAN membership can be configured through software, this can greatly simplify network design and deployment.
-
-To subdivide a network into VLANs, one configures network equipment. Simpler equipment can partition only per physical port (if at all), in which case each VLAN is connected with a dedicated network cable. More sophisticated devices can mark frames through VLAN tagging, so that a single interconnect (trunk) may be used to transport data for multiple VLANs.
-
-For more information, please refer to [https://en.wikipedia.org/wiki/Virtual_LAN](https://en.wikipedia.org/wiki/Virtual_LAN).
-
-**Source URL**
-
-* [https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-kernel/linux](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-kernel/linux)
-* [https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/network](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/network)
-
-For users who prefer ipmi network utilization via VLAN, please refer to the following section **How to use**.
-
-**How to use**
-
-1. Configure VLAN setting of the Olympus platform by inputting the following commands on the Olympus debug console. Please replace the IP addresses mentioned below according to your configuration.
-    ```
-    ip link add link eth1 name eth1.1 type vlan id 1
-    ip addr add 192.168.1.4/24 dev eth1.1
-    ip link set up eth1.1
-    ```
-    If the user prefers the REST method via a remote PC, the commands are provided below as an example.
-    ```
-    export bmc=192.168.0.3
-    export token=`curl -k -H "Content-Type: application/json" -X POST https://${bmc}/login -d '{"username" :  "root", "password" :  "0penBmc"}' | grep token | awk '{print $2;}' | tr -d '"'`
-    curl -k -H "X-Auth-Token: $token" -H "Content-Type: application/json" -X POST -d '{"data":["eth1",1] }' https://${bmc}/xyz/openbmc_project/network/action/VLAN
-    curl -k -H "X-Auth-Token: $token" -H "Content-Type: application/json" -X POST -d '{"data": ["xyz.openbmc_project.Network.IP.Protocol.IPv4", "192.168.1.4",24,"192.168.1.1"] }' https://${bmc}/xyz/openbmc_project/network/eth1_1/action/IP
-    ```
-
-    The expected response is listed below as an example.
-    ```
-    {
-      "data": "/xyz/openbmc_project/network/eth1_1/ipv4/a3f185f1",
-      "message": "200 OK",
-      "status": "ok"
-    }
-    ```
-
-    For more information, please refer to [https://github.com/openbmc/phosphor-networkd/blob/master/docs/Network-Configuration.md](https://github.com/openbmc/phosphor-networkd/blob/master/docs/Network-Configuration.md).
-
-2. Prepare a PC which runs Ubuntu (for example) or any OS which supports VLAN. The Olympus device and the PC are connected to an unmanaged network switch.  
-
-   Please input the following commands in a opened terminal emulator with a privileged user account to configure the VLAN setting of the Ubuntu PC.  
-
-   Here the network interface enp24s0f3 of the Ubuntu PC is used as an example. 
-    ```
-    sudo modprobe 8021q
-    sudo ip link add link enp24s0f3 enp24s.1 type vlan id 1
-    sudo ip addr add 192.168.1.5/24 dev enp24s.1
-    sudo ip link set up enp24s.1
-    ```
-
-3. Ping either from Olympus or the PC to the other device.
-
-**Maintainer**
-* Tyrone Ting
-
-
 ## OpenBMC Test Automation
 
 **Source URL**
@@ -1859,207 +1965,14 @@ So far, we have been testing ipmi and redfish related items(Total 390 test items
 Please download the test report in the link below
 * [Report](https://drive.google.com/open?id=10bmoyEAJvu00t-dwicChR67bND2_9Mzi)
 
+# IPMI Commands
+[IPMI.md](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/IPMI.md)
 
-## Features In Progressing
-* Improve IPMI
-* Improve Redfish
-* Intel Platform related features
+# DCMI Commands
+[DCMI.md](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/DCMI.md)
 
-## Features Planned
-* MCTP
-
-# IPMI Commands Verified
-
-| Command | KCS | RMCP+ | IPMB |
-| :--- | :---: | :---: | :---: |
-| **IPM Device Global Commands** |  |  |  |
-| Device ID | V | V | V |
-| Cold Reset | V | V | V |
-| Warm Reset | - | - | - |
-| Get Self Test Results | V | V | V |
-| Manufacturing Test On | - | - | - |
-| Set ACPI Power State | V | V | V |
-| Get ACPI Power State | V | V | V |
-| Get Device GUID | V | V | V |
-| Get NetFn Support | - | - | - |
-| Get Command Support | - | - | - |
-| Get Command Sub-function Support | - | - | - |
-| Get Configurable Commands | - | - | - |
-| Get Configurable Command Sub-functions | - | - | - |
-| Set Command Enables | - | - | - |
-| Get Command Enables | - | - | - |
-| Set Command Sub-function Enables | - | - | - |
-| Get Command Sub-function Enables | - | - | - |
-| Get OEM NetFn IANA Support | - | - | - |
-| **BMC Watchdog Timer Commands** |  |  |  |
-| Reset Watchdog Timer | V | V | V |
-| Set Watchdog Timer | V | V | V |
-| Get Watchdog Timer | V | V | V |
-| **BMC Device and Messaging Commands** |  |  |  |
-| Set BMC Global Enables | V | V | V |
-| Get BMC Global Enables | V | V | V |
-| Clear Message Flags | - | - | - |
-| Get Message Flags | V | V | V |
-| Enable Message Channel Receive | - | - | - |
-| Get Message | - | - | - |
-| Send Message | - | - | - |
-| Read Event Message Buffer | V | V | V |
-| Get BT Interface Capabilities | V | V | V |
-| Get System GUID | V | V | V |
-| Set System Info Parameters | V | V | V |
-| Get System Info Parameters | V | V | V |
-| Get Channel Authentication Capabilities | V | V | V |
-| Get Session Challenge | - | - | - |
-| Activate Session | - | - | - |
-| Set Session Privilege Level | - | - | - |
-| Close Session | - | - | - |
-| Get Session Info | - | - | - |
-| Get AuthCode | - | - | - |
-| Set Channel Access | V | V | V |
-| Get Channel Access | V | V | V |
-| Get Channel Info Command | V | V | V |
-| User Access Command | V | V | V |
-| Get User Access Command | V | V | V |
-| Set User Name | V | V | V |
-| Get User Name Command | V | V | V |
-| Set User Password Command | V | V | V |
-| Activate Payload | - | V | - |
-| Deactivate Payload | - | V | - |
-| Get Payload Activation Status | - | V | - |
-| Get Payload Instance Info | - | V | - |
-| Set User Payload Access | V | V | V |
-| Get User Payload Access | V | V | V |
-| Get Channel Payload Support | V | V | V |
-| Get Channel Payload Version | V | V | V |
-| Get Channel OEM Payload Info | - | - | - |
-| Master Write-Read | V | V | V |
-| Get Channel Cipher Suites | V | V| V |
-| Suspend/Resume Payload Encryption | - | - | - |
-| Set Channel Security Keys | - | - | - |
-| Get System Interface Capabilities | - | - | - |
-| Firmware Firewall Configuration | - | - | - |
-| **Chassis Device Commands** |  |  |  |
-| Get Chassis Capabilities | V | V | V |
-| Get Chassis Status | V | V | V |
-| Chassis Control | V | V | V |
-| Chassis Reset | - | - | - |
-| Chassis Identify | V | V | V |
-| Set Front Panel Button Enables | - | - | - |
-| Set Chassis Capabilities | V | V | V |
-| Set Power Restore Policy | V | V | V |
-| Set Power Cycle Interval | - | - | - |
-| Get System Restart Cause | - | - | - |
-| Set System Boot Options | V | V | V |
-| Get System Boot Options | V | V | V |
-| Get POH Counter | V | V | V |
-| **Event Commands** |  |  |  |
-| Set Event Receiver | - | - | - |
-| Get Event Receiver | - | - | - |
-| Platform Event | V | V | V |
-| **PEF and Alerting Commands** |  |  |  |
-| Get PEF Capabilities | - | - | - |
-| Arm PEF Postpone Timer | - | - | - |
-| Set PEF Configuration Parameters | - | - | - |
-| Get PEF Configuration Parameters | - | - | - |
-| Set Last Processed Event ID | - | - | - |
-| Get Last Processed Event ID | - | - | - |
-| Alert Immediate | - | - | - |
-| PET Acknowledge | - | - | - |
-| **Sensor Device Commands** |  |  |  |
-| Get Device SDR Info | V | V | V |
-| Get Device SDR | V | V | V |
-| Reserve Device SDR Repository | V | V | V |
-| Get Sensor Reading Factors | - | - | - |
-| Set Sensor Hysteresis | - | - | - |
-| Get Sensor Hysteresis | - | - | - |
-| Set Sensor Threshold | - | - | - |
-| Get Sensor Threshold | V | V | V |
-| Set Sensor Event Enable | - | - | - |
-| Get Sensor Event Enable | - | - | - |
-| Re-arm Sensor Events | - | - | - |
-| Get Sensor Event Status | - | - | - |
-| Get Sensor Reading | V | V | V |
-| Set Sensor Type | - | - | - |
-| Get Sensor Type | V | V | V |
-| Set Sensor Reading And Event Status | V | V | V |
-| **FRU Device Commands** |  |  |  |
-| Get FRU Inventory Area Info | V | V | V |
-| Read FRU Data | V | V | V |
-| Write FRU Data | V | V | V |
-| **SDR Device Commands** |  |  |  |
-| Get SDR Repository Info | V | V | V |
-| Get SDR Repository Allocation Info | - | - | - |
-| Reserve SDR Repository | V | V | V |
-| Get SDR | V | V | V |
-| Add SDR | - | - | - |
-| Partial Add SDR | - | - | - |
-| Delete SDR | - | - | - |
-| Clear SDR Repository | - | - | - |
-| Get SDR Repository Time | - | - | - |
-| Set SDR Repository Time | - | - | - |
-| Enter SDR Repository Update Mode | - | - | - |
-| Exit SDR Repository Update Mode | - | - | - |
-| Run Initialization Agent | - | - | - |
-| **SEL Device Commands** |  |  |  |
-| Get SEL Info | V | V | V |
-| Get SEL Allocation Info | - | - | - |
-| Reserve SEL | V | V | V |
-| Get SEL Entry | V | V | V |
-| Add SEL Entry | V | V | V |
-| Partial Add SEL Entry | - | - | - |
-| Delete SEL Entry | V | V | V |
-| Clear SEL | V | V | V |
-| Get SEL Time | V | V | V |
-| Set SEL Time | V | V | V |
-| Get Auxiliary Log Status | - | - | - |
-| Set Auxiliary Log Status | - | - | - |
-| Get SEL Time UTC Offset | - | - | - |
-| Set SEL Time UTC Offset | - | - | - |
-| **LAN Device Commands** |  |  |  |
-| Set LAN Configuration Parameters | V | V | V |
-| Get LAN Configuration Parameters | V | V | V |
-| Suspend BMC ARPs | - | - | - |
-| Get IP/UDP/RMCP Statistics | - | - | - |
-| **Serial/Modem Device Commands** |  |  |  |
-| Set Serial/Modem Mux | - | - | - |
-| Set Serial Routing Mux | - | - | - |
-| SOL Activating | - | V | - |
-| Set SOL Configuration Parameters | - | V | - |
-| Get SOL Configuration Parameters | - | V | - |
-| **Command Forwarding Commands** |  |  |  |
-| Forwarded Command | - | - | - |
-| Set Forwarded Commands | - | - | - |
-| Get Forwarded Commands | - | - | - |
-| Enable Forwarded Commands | - | - | - |
-> _V: Verified_  
-> _-: Unsupported_
-
-# DCMI Commands Verified
-| Command | Verified |
-| :--- | :---: | 
-| **DCMI Capabilities & Discovery Configuration Commands** |  |
-| Get DCMI Capabilities Info | V |
-| Set DCMI Configuration Parameters | V |
-| Get DCMI Configuration Parameters | V |
-| Get Management Controller Identifier String | V |
-| Set Management Controller Identifier String | V |
-| **Platform & Asset Identification Commands** |  |
-| Get Asset Tag | V |
-| Set Asset Tag | V |
-| **Sensor & SDR Commands** |  |
-| Get DCMI Sensor Info| V |
-| **Power Management** |  |
-| Get Power Reading | V |
-| Get Power Limit | V |
-| Set Power Limit | V |
-| Activate / Deactivate Power Limit | V |
-| **Thermal Management** |  |
-| Set Thermal Limit | - |
-| Get Thermal List | - |
-| Get Temperature Reading | V |
-
-> _V: Verified_  
-> _-: Unsupported_
+# Redfish APIs
+[REDFISH.md](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.8/meta-quanta/meta-olympus-nuvoton/REDFISH.md)
 
 # Image Size
 Type          | Size    | Note                                                                                                     |
@@ -2068,23 +1981,3 @@ image-uboot   |  450 KB | u-boot 2019.01 + bootblock for NPCM750 only           
 image-kernel  |  4.0 MB   | linux 5.4 version  + initramfs                                                                                      |
 image-rofs    |  18.0 MB  | bottom layer of the overlayfs, read only                                                                 |
 image-rwfs    |  0 MB  | middle layer of the overlayfs, rw files in this partition will be created at runtime,<br /> with a maximum capacity of 3 MB|
-
-# Modifications
-
-* 2019.10.01 First release ReadME.md
-* 2019.11.20 First release VM, In-Band Firmware Update
-* 2019.12.05 Add BIOS update function via web UI part
-* 2019.12.09 Update Serail Over Lan(SOL) and BMC Firmware update
-* 2019.12.11 Update Time settings of System/Time
-* 2019.12.13 Update Sensors, and LED
-* 2019.12.13 Update Fan, BIOS POST code, and FRU
-* 2019.12.17 Update SOL IPMI, Image size, and server power operations
-* 2019.12.18 Update Message Bridging, and VM application
-* 2019.12.19 Rename Message Bridging to Host Power Budget Control
-* 2019.12.19 Add Fan PID control
-* 2019.12.23 Fix some typo and text format
-* 2020.03.31 Add Open Test Automation and update Features In Progressing and Image Size
-* 2020.04.06 Add Certificate Management
-* 2020.04.20 Update LDAP for User Management
-* 2020.05.15 Add VLAN
-* 2020.06.03 Update BIOS POST Code
