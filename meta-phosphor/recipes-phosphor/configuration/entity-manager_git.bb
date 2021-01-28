@@ -3,18 +3,19 @@ DESCRIPTION = "Entity Manager provides d-bus configuration data \
 and configures system sensors"
 
 SRC_URI = "git://github.com/openbmc/entity-manager.git file://blocklist.json"
-SRCREV = "def29274907ef77187b02ae19d55bb9888413892"
+SRCREV = "a5a716dadfbf97b601577276cc699af8f662beeb"
 PV = "0.1+git${SRCPV}"
 
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENCE;md5=a6a4edad4aed50f39a66d098d74b265b"
 
 DEPENDS = "boost \
+           dbus \
            nlohmann-json \
            sdbusplus \
            valijson"
 
-S = "${WORKDIR}/git/"
+S = "${WORKDIR}/git"
 inherit meson systemd
 
 EXTRA_OEMESON = "-Dtests=disabled"
@@ -32,6 +33,9 @@ do_install_append() {
     install -D ${WORKDIR}/blocklist.json ${D}${datadir}/${BPN}/blacklist.json
 }
 
+FILES_${PN} += " \
+    ${datadir}/dbus-1/system-services/xyz.openbmc_project.EntityManager.service \
+    "
 FILES_fru-device = "${bindir}/fru-device ${datadir}/${BPN}/blacklist.json"
 
 SYSTEMD_PACKAGES = "${PN} ${EXTRA_ENTITY_MANAGER_PACKAGES}"

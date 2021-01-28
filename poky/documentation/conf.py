@@ -16,7 +16,7 @@ import os
 import sys
 import datetime
 
-current_version = "dev"
+current_version = "3.2.1"
 
 # String used in sidebar
 version = 'Version: ' + current_version
@@ -53,8 +53,7 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'boilerplate.rst',
-                    'adt-manual/*.rst']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'boilerplate.rst']
 
 # master document name. The default changed from contents to index. so better
 # set it ourselves.
@@ -83,7 +82,7 @@ extlinks = {
 
 # Intersphinx config to use cross reference with Bitbake user manual
 intersphinx_mapping = {
-    'bitbake': ('https://docs.yoctoproject.org/bitbake/', None)
+    'bitbake': ('https://docs.yoctoproject.org/bitbake/1.48', None)
 }
 
 # -- Options for HTML output -------------------------------------------------
