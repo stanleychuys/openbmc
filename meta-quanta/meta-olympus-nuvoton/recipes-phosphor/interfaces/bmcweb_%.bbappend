@@ -10,10 +10,10 @@ EXTRA_OEMESON_append = " -Dredfish-cpu-log=enabled"
 EXTRA_OEMESON_append = " -Dredfish-raw-peci=enabled"
 
 # Enable Redfish BMC Journal support
-# EXTRA_OEMESON_append = " -Dredfish-bmc-journal=enabled"
+EXTRA_OEMESON_append = " -Dredfish-bmc-journal=enabled"
 
 # Enable DBUS log service
-EXTRA_OEMESON_append = " -Dredfish-dbus-log=enabled"
+#EXTRA_OEMESON_append = " -Dredfish-dbus-log=enabled"
 
 # Enable TFTP
 EXTRA_OEMESON_append = " -Dinsecure-tftp-update=enabled"
