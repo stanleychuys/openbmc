@@ -15,3 +15,6 @@ SRC_URI_append_nuvoton = " file://0011-driver-misc-npcm7xx-mcu-flash-fix-mcu-res
 SRC_URI_append_nuvoton = " file://0012-driver-misc-npcm7xx-mcu-flash-add-npcm7xx_mcu_releas.patch"
 SRC_URI_append_nuvoton = " file://0015-driver-misc-nuvoton-vdm-support-openbmc-libmctp.patch"
 SRC_URI_append_nuvoton = " file://0018-dts-runbmc-olympus-add-power-reset-button-and-post-c.patch"
+
+#SRC_URI_append_nuvoton = " file://v4l2.cfg"
+#SRC_URI_append_nuvoton = " file://0001-driver-video-nuvoton-add-video-driver.patch"
