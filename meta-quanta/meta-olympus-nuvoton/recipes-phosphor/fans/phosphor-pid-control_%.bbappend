@@ -22,14 +22,14 @@ SYSTEMD_SERVICE_${PN}_append_olympus-nuvoton = " fan-boot-control.service"
 inherit obmc-phosphor-systemd
 
 PID_TMPL = "phosphor-pid-control.service"
-OBMC_HOST_START_TGTFMT = "obmc-host-startmin@{0}.target"
-ENABLE_PID_FMT = "../${PID_TMPL}:${OBMC_HOST_START_TGTFMT}.wants/${PID_TMPL}"
-SYSTEMD_LINK_${PN} += "${@compose_list(d, 'ENABLE_PID_FMT', 'OBMC_HOST_INSTANCES')}"
+CHASSIS_POWERON_TGTFMT = "obmc-chassis-poweron.target"
+ENABLE_PID_FMT = "../${PID_TMPL}:${CHASSIS_POWERON_TGTFMT}.wants/${PID_TMPL}"
+SYSTEMD_LINK_${PN} += "${@compose_list(d, 'ENABLE_PID_FMT', 'OBMC_CHASSIS_INSTANCES')}"
 
 PID_STOP_TMPL = "phosphor-pid-control-stop.service"
-CHASSIS_POWEROFF_TGTFMT = "obmc-chassis-poweroff@{0}.target"
+CHASSIS_POWEROFF_TGTFMT = "obmc-chassis-poweroff.target"
 DISABLE_PID_FMT = "../${PID_STOP_TMPL}:${CHASSIS_POWEROFF_TGTFMT}.wants/${PID_STOP_TMPL}"
-SYSTEMD_LINK_${PN} += "${@compose_list(d, 'DISABLE_PID_FMT', 'OBMC_HOST_INSTANCES')}"
+SYSTEMD_LINK_${PN} += "${@compose_list(d, 'DISABLE_PID_FMT', 'OBMC_CHASSIS_INSTANCES')}"
 
 do_install_append_olympus-nuvoton() {
     install -d ${D}/${bindir}

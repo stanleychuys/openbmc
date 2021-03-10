@@ -1,6 +1,5 @@
 [Unit]
 Description=OpenBMC Fan Control Daemon
-After=obmc-chassis-poweron@0.target
 
 [Service]
 Type=simple
@@ -10,4 +9,3 @@ Restart=always
 RestartSec=5
 StartLimitInterval=0
 ExecStopPost=/usr/bin/fan-default-speed.sh
-

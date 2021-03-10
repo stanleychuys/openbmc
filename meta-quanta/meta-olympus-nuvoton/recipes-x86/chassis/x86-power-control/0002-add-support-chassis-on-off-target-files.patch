@@ -1,0 +1,113 @@
+From c81344e0349b94bac1f8adc54e9770223118df13 Mon Sep 17 00:00:00 2001
+From: Tim Lee <timlee660101@gmail.com>
+Date: Wed, 10 Mar 2021 17:22:26 +0800
+Subject: [PATCH] add support chassis on/off target files
+
+Signed-off-by: Tim Lee <timlee660101@gmail.com>
+Signed-off-by: Joseph Liu <kwliu@nuvoton.com>
+---
+ power-control-x86/src/power_control.cpp | 47 +++++++++++++++++++++++--
+ 1 file changed, 44 insertions(+), 3 deletions(-)
+
+diff --git a/power-control-x86/src/power_control.cpp b/power-control-x86/src/power_control.cpp
+index 3a4bb04..46375d1 100644
+--- a/power-control-x86/src/power_control.cpp
++++ b/power-control-x86/src/power_control.cpp
+@@ -438,6 +438,43 @@ static void setBootProgress(const BootProgressStage stage)
+             << std::string(getBootProgressStage(stage)) << "\" stage.\n";
+ }
+ 
++static constexpr auto systemdBusname = "org.freedesktop.systemd1";
++static constexpr auto systemdPath = "/org/freedesktop/systemd1";
++static constexpr auto systemdInterface = "org.freedesktop.systemd1.Manager";
++static constexpr auto chassisOnTargetName = "obmc-chassis-poweron.target";
++static constexpr auto chassisOffTargetName = "obmc-chassis-poweroff.target";
++
++void chassisPowerOn()
++{
++    conn->async_method_call(
++        [](boost::system::error_code ec) {
++            if (ec)
++            {
++                phosphor::logging::log<phosphor::logging::level::ERR>(
++                    "Failed to call chassisPowerOn",
++                    phosphor::logging::entry("ERR=%s", ec.message().c_str()));
++            }
++        },
++        systemdBusname, systemdPath, systemdInterface, "StartUnit",
++        chassisOnTargetName, "replace");
++    return;
++}
++
++void chassisPowerOff()
++{
++    conn->async_method_call(
++        [](boost::system::error_code ec) {
++            if (ec)
++            {
++                phosphor::logging::log<phosphor::logging::level::ERR>(
++                    "Failed to call chassisPowerOff",
++                    phosphor::logging::entry("ERR=%s", ec.message().c_str()));
++            }
++        },
++        systemdBusname, systemdPath, systemdInterface, "StartUnit",
++        chassisOffTargetName, "replace");
++    return;
++}
+ 
+ static constexpr std::string_view getHostState(const PowerState state)
+ {
+@@ -1345,6 +1382,8 @@ static void currentHostStateMonitor()
+         pohCounterTimerStart();
+         // Clear the restart cause set for the next restart
+         clearRestartCause();
++
++        power_control::chassisPowerOn();
+     }
+     else
+     {
+@@ -1353,7 +1392,7 @@ static void currentHostStateMonitor()
+         // If HostState is trurned to OFF, Set 'OperatingSystemState' to 'Inactive'
+         osIface->set_property("OperatingSystemState", std::string("Inactive"));
+         setBootProgress(BootProgressStage::Unspecified);
+-
++        power_control::chassisPowerOff();
+         // Set the restart cause set for this restart
+         setRestartCause();
+     }
+@@ -1418,7 +1457,7 @@ static void currentHostStateMonitor()
+                                       std::string("Inactive"));
+ 
+                 setBootProgress(BootProgressStage::Unspecified);
+-
++                power_control::chassisPowerOff();
+                 // Set the restart cause set for this restart
+                 setRestartCause();
+                 resetACBootProperty();
+@@ -2099,12 +2138,14 @@ static void postCompleteHandler()
+         sendPowerControlEvent(Event::postCompleteAssert);
+         osIface->set_property("OperatingSystemState", std::string("Standby"));
+         setBootProgress(BootProgressStage::OSStart);
++        power_control::chassisPowerOn();
+     }
+     else
+     {
+         sendPowerControlEvent(Event::postCompleteDeAssert);
+         osIface->set_property("OperatingSystemState", std::string("Inactive"));
+         setBootProgress(BootProgressStage::Unspecified);
++        power_control::chassisPowerOff();
+     }
+     postCompleteEvent.async_wait(
+         boost::asio::posix::stream_descriptor::wait_read,
+@@ -2390,7 +2431,7 @@ int main(int argc, char* argv[])
+     if (power_control::nmiOutLine)
+         power_control::nmiSourcePropertyMonitor();
+ 
+-    std::cerr << "Initializing power state. ";
++    std::cerr << "Initializing power state.\n";
+     power_control::logStateTransition(power_control::powerState);
+ 
+     // Boot Progress Service
+-- 
+2.17.1
+
