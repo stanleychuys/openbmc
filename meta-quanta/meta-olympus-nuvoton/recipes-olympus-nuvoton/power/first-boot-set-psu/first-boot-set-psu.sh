@@ -51,7 +51,7 @@ updaet_inventory ${arr[0]} "xyz.openbmc_project.Inventory.Decorator.Asset" 1 "Mo
 pmbus_read ${arr[1]} ${arr[2]} 0xad 21
 updaet_inventory ${arr[0]} "xyz.openbmc_project.Inventory.Decorator.Asset" 1 "PartNumber" "s" $string
 
-pmbus_read ${arr[1]} ${arr[2]} 0x9e 18
+pmbus_read ${arr[1]} ${arr[2]} 0x9e 16
 updaet_inventory ${arr[0]} "xyz.openbmc_project.Inventory.Decorator.Asset" 1 "SerialNumber" "s" $string
 
 updaet_inventory ${arr[0]} "xyz.openbmc_project.Inventory.Decorator.Cacheable" 1 "Cached" "b" "true"
