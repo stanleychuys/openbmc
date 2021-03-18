@@ -6,7 +6,7 @@
 SPI_SW_SELECT=227
 
 # Kernel control string for bind/unbind
-KERNEL_FIU_ID="c0000000.fiu"
+KERNEL_FIU_ID="c0000000.spi"
 
 # Kernel sysfs path for bind/unbind
 KERNEL_SYSFS_FIU="/sys/bus/platform/drivers/NPCM-FIU"
