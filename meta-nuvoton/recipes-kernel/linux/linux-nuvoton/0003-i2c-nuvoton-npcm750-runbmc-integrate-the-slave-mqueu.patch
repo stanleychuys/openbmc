@@ -1,7 +1,7 @@
-From a15df2a18441c909cb19f3ae9cd2db3472d625e3 Mon Sep 17 00:00:00 2001
+From 4ccb3076c71c9aa3355cc849f991d4d8e5301654 Mon Sep 17 00:00:00 2001
 From: kfting <kfting@nuvoton.com>
 Date: Mon, 15 Jul 2019 09:22:29 +0800
-Subject: [PATCH 03/34] i2c: nuvoton-npcm750-runbmc: integrate the slave mqueue
+Subject: [PATCH] i2c: nuvoton-npcm750-runbmc: integrate the slave mqueue
 
 1. Add support for the runbmc IPMB functionality
 2. The slave mqueue node is required on the i2c bus 5 for runbmc.
@@ -207,12 +207,12 @@ index 000000000000..376dff998fa3
 +  [10204.220734634] : 20 18 c8 2c 80 01 53
 +  [10204.468461664] : 20 18 c8 2c 80 01 53
 diff --git a/drivers/i2c/Kconfig b/drivers/i2c/Kconfig
-index 1474e57ecafc..b49030593a1a 100644
+index 438905e2a1d0..5ffe13438b6f 100644
 --- a/drivers/i2c/Kconfig
 +++ b/drivers/i2c/Kconfig
-@@ -119,6 +119,31 @@ if I2C_SLAVE
- config I2C_SLAVE_EEPROM
- 	tristate "I2C eeprom slave driver"
+@@ -133,6 +133,31 @@ config I2C_SLAVE_TESTUNIT
+ 	  multi-master, SMBus Host Notify, etc. Please read
+ 	  Documentation/i2c/slave-testunit-backend.rst for further details.
  
 +config I2C_SLAVE_MQUEUE
 +	tristate "I2C mqueue (message queue) slave driver"
@@ -243,13 +243,13 @@ index 1474e57ecafc..b49030593a1a 100644
  
  config I2C_DEBUG_CORE
 diff --git a/drivers/i2c/Makefile b/drivers/i2c/Makefile
-index bed6ba63c983..9a31bc75a446 100644
+index c1d493dc9bac..0442e5cf8587 100644
 --- a/drivers/i2c/Makefile
 +++ b/drivers/i2c/Makefile
-@@ -16,5 +16,6 @@ obj-$(CONFIG_I2C_MUX)		+= i2c-mux.o
- obj-y				+= algos/ busses/ muxes/
+@@ -17,5 +17,6 @@ obj-y				+= algos/ busses/ muxes/
  obj-$(CONFIG_I2C_STUB)		+= i2c-stub.o
  obj-$(CONFIG_I2C_SLAVE_EEPROM)	+= i2c-slave-eeprom.o
+ obj-$(CONFIG_I2C_SLAVE_TESTUNIT)	+= i2c-slave-testunit.o
 +obj-$(CONFIG_I2C_SLAVE_MQUEUE)	+= i2c-slave-mqueue.o
  
  ccflags-$(CONFIG_I2C_DEBUG_CORE) := -DDEBUG
