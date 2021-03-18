@@ -1,7 +1,7 @@
-KBRANCH ?= "Poleg-5.4-OpenBMC"
-LINUX_VERSION ?= "5.4.80"
+KBRANCH ?= "NPCM-5.10-OpenBMC"
+LINUX_VERSION ?= "5.10.14"
 
-SRCREV="fa47f61e9b9221efb656c4cc24921682f36f9fca"
+SRCREV="711b69d00cd6d1abc439e66df87d02262a8f4b82"
 
 require linux-nuvoton.inc
 
