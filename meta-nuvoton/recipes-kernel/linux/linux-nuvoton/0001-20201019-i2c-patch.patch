@@ -1,0 +1,71 @@
+From bc8357436ab1deea932441c171db41ac076518e8 Mon Sep 17 00:00:00 2001
+From: Joseph Liu <kwliu@nuvoton.com>
+Date: Mon, 19 Oct 2020 10:36:01 +0800
+Subject: [PATCH] 20201019 i2c patch
+
+---
+ drivers/i2c/busses/i2c-npcm7xx.c | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-npcm7xx.c b/drivers/i2c/busses/i2c-npcm7xx.c
+index 1a11a316d8db..944a054dba38 100644
+--- a/drivers/i2c/busses/i2c-npcm7xx.c
++++ b/drivers/i2c/busses/i2c-npcm7xx.c
+@@ -451,7 +451,7 @@ static inline bool npcm_i2c_tx_fifo_empty(struct npcm_i2c *bus)
+ 	tx_fifo_sts = ioread8(bus->reg + NPCM_I2CTXF_STS);
+ 	/* check if TX FIFO is not empty */
+ 	if ((tx_fifo_sts & NPCM_I2CTXF_STS_TX_BYTES) == 0)
+-		return false;
++		return true;
+ 
+ 	/* check if TX FIFO status bit is set: */
+ 	return !!FIELD_GET(NPCM_I2CTXF_STS_TX_THST, tx_fifo_sts);
+@@ -463,8 +463,8 @@ static inline bool npcm_i2c_rx_fifo_full(struct npcm_i2c *bus)
+ 
+ 	rx_fifo_sts = ioread8(bus->reg + NPCM_I2CRXF_STS);
+ 	/* check if RX FIFO is not empty: */
+-	if ((rx_fifo_sts & NPCM_I2CRXF_STS_RX_BYTES) == 0)
+-		return false;
++	if ((rx_fifo_sts & NPCM_I2CRXF_STS_RX_BYTES) != 0)
++		return true;
+ 
+ 	/* check if rx fifo full status is set: */
+ 	return !!FIELD_GET(NPCM_I2CRXF_STS_RX_THST, rx_fifo_sts);
+@@ -1483,6 +1483,7 @@ static void npcm_i2c_irq_handle_nack(struct npcm_i2c *bus)
+ 		readx_poll_timeout_atomic(ioread8, bus->reg + NPCM_I2CCST, val,
+ 					  !(val & NPCM_I2CCST_BUSY), 10, 200);
+ 	}
++
+ 	bus->state = I2C_IDLE;
+ 
+ 	/*
+@@ -1717,7 +1718,7 @@ static int npcm_i2c_recovery_tgclk(struct i2c_adapter *_adap)
+ 			status = 0;
+ 		}
+ 	} while (!done && iter--);
+-
++#if 0
+ 	/* If SDA line is released: send start-addr-stop, to re-sync. */
+ 	if (npcm_i2c_get_SDA(_adap)) {
+ 		/* Send an address byte in write direction: */
+@@ -1733,6 +1734,7 @@ static int npcm_i2c_recovery_tgclk(struct i2c_adapter *_adap)
+ 			usleep_range(200, 500);
+ 		}
+ 	}
++#endif
+ 	npcm_i2c_reset(bus);
+ 	npcm_i2c_int_enable(bus, true);
+ 
+@@ -2172,6 +2174,9 @@ static int npcm_i2c_master_xfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
+ 	if (bus->cmd_err == -EAGAIN)
+ 		ret = i2c_recover_bus(adap);
+ 
++	if (bus->cmd_err && (NPCM_I2CRXF_CTL_LAST_PEC & ioread8(bus->reg + NPCM_I2CRXF_CTL)))
++		npcm_i2c_reset(bus);
++
+ #if IS_ENABLED(CONFIG_I2C_SLAVE)
+ 	/* reenable slave if it was enabled */
+ 	if (bus->slave)
+-- 
+2.17.1
+
