@@ -10,6 +10,7 @@ SRC_URI_append_nuvoton = " file://0003-i2c-nuvoton-npcm750-runbmc-integrate-the-
 SRC_URI_append_nuvoton = " file://0004-driver-ncsi-replace-del-timer-sync.patch"
 SRC_URI_append_nuvoton = " file://0008-WAR-skip-clear-fault-for-flexpower.patch"
 SRC_URI_append_nuvoton = " file://0015-driver-misc-nuvoton-vdm-support-openbmc-libmctp.patch"
+SRC_URI_append_nuvoton = " file://0016-fs-add-default_file_splice_write.patch"
 
 # V4L2 VCD driver
 #SRC_URI_append_nuvoton = " file://v4l2.cfg"
