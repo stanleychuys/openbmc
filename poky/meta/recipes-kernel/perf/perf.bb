@@ -13,7 +13,7 @@ PR = "r9"
 
 PACKAGECONFIG ??= "scripting tui libunwind"
 PACKAGECONFIG[dwarf] = ",NO_DWARF=1"
-PACKAGECONFIG[scripting] = ",NO_LIBPERL=1 NO_LIBPYTHON=1,perl python"
+PACKAGECONFIG[scripting] = ",NO_LIBPERL=1 NO_LIBPYTHON=1,perl python3"
 # gui support was added with kernel 3.6.35
 # since 3.10 libnewt was replaced by slang
 # to cover a wide range of kernel we add both dependencies
@@ -25,10 +25,14 @@ PACKAGECONFIG[jvmti] = ",NO_JVMTI=1"
 # libaudit support would need scripting to be enabled
 PACKAGECONFIG[audit] = ",NO_LIBAUDIT=1,audit"
 PACKAGECONFIG[manpages] = ",,xmlto-native asciidoc-native"
+PACKAGECONFIG[cap] = ",,libcap"
+# Arm CoreSight
+PACKAGECONFIG[coresight] = "CORESIGHT=1,,opencsd"
 
 # libunwind is not yet ported for some architectures
 PACKAGECONFIG_remove_arc = "libunwind"
 PACKAGECONFIG_remove_riscv64 = "libunwind"
+PACKAGECONFIG_remove_riscv32 = "libunwind"
 
 DEPENDS = " \
     virtual/${MLPREFIX}libc \
@@ -44,14 +48,14 @@ PROVIDES = "virtual/perf"
 inherit linux-kernel-base kernel-arch manpages
 
 # needed for building the tools/perf Python bindings
-inherit ${@bb.utils.contains('PACKAGECONFIG', 'scripting', 'pythonnative', '', d)}
-inherit python-dir
+inherit ${@bb.utils.contains('PACKAGECONFIG', 'scripting', 'python3native', '', d)}
+inherit python3-dir
 export PYTHON_SITEPACKAGES_DIR
 
 #kernel 3.1+ supports WERROR to disable warnings as errors
 export WERROR = "0"
 
-do_populate_lic[depends] += "virtual/kernel:do_patch"
+do_populate_lic[depends] += "virtual/kernel:do_shared_workdir"
 
 # needed for building the tools/perf Perl binding
 include ${@bb.utils.contains('PACKAGECONFIG', 'scripting', 'perf-perl.inc', '', d)}
@@ -67,19 +71,24 @@ SPDX_S = "${S}/tools/perf"
 LDFLAGS="-ldl -lutil"
 
 EXTRA_OEMAKE = '\
+    V=1 \
     -C ${S}/tools/perf \
     O=${B} \
     CROSS_COMPILE=${TARGET_PREFIX} \
     ARCH=${ARCH} \
     CC="${CC}" \
+    CCLD="${CC}" \
+    LDSHARED="${CC} -shared" \
     AR="${AR}" \
     LD="${LD}" \
     EXTRA_CFLAGS="-ldw" \
+    YFLAGS='-y --file-prefix-map=${WORKDIR}=/usr/src/debug/${PN}/${EXTENDPE}${PV}-${PR}' \
     EXTRA_LDFLAGS="${PERF_EXTRA_LDFLAGS}" \
     perfexecdir=${libexecdir} \
     NO_GTK2=1 \
     ${PACKAGECONFIG_CONFARGS} \
     TMPDIR="${B}" \
+    LIBUNWIND_DIR=${STAGING_EXECPREFIXDIR} \
 '
 
 EXTRA_OEMAKE += "\
@@ -93,6 +102,7 @@ EXTRA_OEMAKE += "\
     'sharedir=${@os.path.relpath(datadir, prefix)}' \
     'mandir=${@os.path.relpath(mandir, prefix)}' \
     'infodir=${@os.path.relpath(infodir, prefix)}' \
+    ${@bb.utils.contains('PACKAGECONFIG', 'scripting', 'PYTHON=python3 PYTHON_CONFIG=python3-config', '', d)} \
 "
 
 # During do_configure, we might run a 'make clean'. That often breaks
@@ -103,7 +113,6 @@ EXTRA_OEMAKE += "\
 EXTRA_OEMAKE_append_task-configure = " JOBS=1"
 
 PERF_SRC ?= "Makefile \
-             include \
              tools/arch \
              tools/build \
              tools/include \
@@ -111,6 +120,8 @@ PERF_SRC ?= "Makefile \
              tools/Makefile \
              tools/perf \
              tools/scripts \
+             scripts/ \
+             arch/${ARCH}/Makefile \
 "
 
 PERF_EXTRA_LDFLAGS = ""
@@ -131,7 +142,7 @@ do_install() {
 	oe_runmake install
 	# we are checking for this make target to be compatible with older perf versions
 	if ${@bb.utils.contains('PACKAGECONFIG', 'scripting', 'true', 'false', d)} && grep -q install-python_ext ${S}/tools/perf/Makefile*; then
-		oe_runmake DESTDIR=${D} install-python_ext
+	    oe_runmake DESTDIR=${D} install-python_ext
 	fi
 }
 
@@ -141,6 +152,7 @@ python copy_perf_source_from_kernel() {
     src_dir = d.getVar("STAGING_KERNEL_DIR")
     dest_dir = d.getVar("S")
     bb.utils.mkdirhier(dest_dir)
+    bb.utils.prunedir(dest_dir)
     for s in sources:
         src = oe.path.join(src_dir, s)
         dest = oe.path.join(dest_dir, s)
@@ -149,13 +161,15 @@ python copy_perf_source_from_kernel() {
         if os.path.isdir(src):
             oe.path.copyhardlinktree(src, dest)
         else:
+            src_path = os.path.dirname(s)
+            os.makedirs(os.path.join(dest_dir,src_path),exist_ok=True)
             bb.utils.copyfile(src, dest)
 }
 
 do_configure_prepend () {
     # If building a multlib based perf, the incorrect library path will be
     # detected by perf, since it triggers via: ifeq ($(ARCH),x86_64). In a 32 bit
-    # build, with a 64 bit multilib, the arch won't match and the detection of a 
+    # build, with a 64 bit multilib, the arch won't match and the detection of a
     # 64 bit build (and library) are not exected. To ensure that libraries are
     # installed to the correct location, we can use the weak assignment in the
     # config/Makefile.
@@ -190,6 +204,9 @@ do_configure_prepend () {
             ${S}/tools/perf/Makefile.perf
         sed -i -e "s,prefix='\$(DESTDIR_SQ)/usr'$,prefix='\$(DESTDIR_SQ)/usr' --install-lib='\$(DESTDIR)\$(PYTHON_SITEPACKAGES_DIR)',g" \
             ${S}/tools/perf/Makefile.perf
+        # backport https://github.com/torvalds/linux/commit/e4ffd066ff440a57097e9140fa9e16ceef905de8
+        sed -i -e 's,\($(Q)$(SHELL) .$(arch_errno_tbl).\) $(CC) $(arch_errno_hdr_dir),\1 $(firstword $(CC)) $(arch_errno_hdr_dir),g' \
+            ${S}/tools/perf/Makefile.perf
     fi
     sed -i -e "s,--root='/\$(DESTDIR_SQ)',--prefix='\$(DESTDIR_SQ)/usr' --install-lib='\$(DESTDIR)\$(PYTHON_SITEPACKAGES_DIR)',g" \
         ${S}/tools/perf/Makefile*
@@ -198,6 +215,51 @@ do_configure_prepend () {
         sed -i -e 's,\ .config-detected, $(OUTPUT)/config-detected,g' \
             ${S}/tools/build/Makefile.build
     fi
+
+    # start reproducibility substitutions
+    if [ -e "${S}/tools/perf/Makefile.config" ]; then
+        # The following line in the Makefle:
+        #     override PYTHON := $(call get-executable-or-default,PYTHON,$(PYTHON_AUTO))
+        # "PYTHON" / "PYTHON_AUTO" have the full path as part of the variable. We've
+        # ensure that the environment is setup and we do not need the full path to be
+        # captured, since the symbol gets built into the executable, making it not
+        # reproducible.
+        sed -i -e 's,$(call get-executable-or-default\,PYTHON\,$(PYTHON_AUTO)),$(notdir $(call get-executable-or-default\,PYTHON\,$(PYTHON_AUTO))),g' \
+            ${S}/tools/perf/Makefile.config
+
+        # The following line:
+        #     srcdir_SQ = $(patsubst %tools/perf,tools/perf,$(subst ','\'',$(srcdir))),
+        # Captures the full src path of perf, which of course makes it not
+        # reproducible. We really only need the relative location 'tools/perf', so we
+        # change the Makefile line to remove everything before 'tools/perf'
+        sed -i -e "s%srcdir_SQ = \$(subst ','\\\'',\$(srcdir))%srcdir_SQ = \$(patsubst \%tools/perf,tools/perf,\$(subst ','\\\'',\$(srcdir)))%g" \
+            ${S}/tools/perf/Makefile.config
+    fi
+    if [ -e "${S}/tools/perf/tests/Build" ]; then
+        # OUTPUT is the full path, we have python on the path so we remove it from the
+        # definition. This is captured in the perf binary, so breaks reproducibility
+        sed -i -e 's,PYTHONPATH="BUILD_STR($(OUTPUT)python)",PYTHONPATH="BUILD_STR(python)",g' \
+            ${S}/tools/perf/tests/Build
+    fi
+    if [ -e "${S}/tools/perf/util/Build" ]; then
+        # To avoid bison generating #ifdefs that have captured paths, we make sure
+        # all the calls have YFLAGS, which contains prefix mapping information.
+        sed -i -e 's,$(BISON),$(BISON) $(YFLAGS),g' ${S}/tools/perf/util/Build
+    fi
+    if [ -e "${S}/scripts/Makefile.host" ]; then
+        # To avoid yacc (bison) generating #ifdefs that have captured paths, we make sure
+        # all the calls have YFLAGS, which contains prefix mapping information.
+        sed -i -e 's,$(YACC),$(YACC) $(YFLAGS),g' ${S}/scripts/Makefile.host
+    fi
+    if [ -e "${S}/tools/perf/pmu-events/Build" ]; then
+        target='$(OUTPUT)pmu-events/pmu-events.c $(V)'
+        replacement1='$(OUTPUT)pmu-events/pmu-events.c $(V)\n'
+        replacement2='\t$(srctree)/sort-pmuevents.py $(OUTPUT)pmu-events/pmu-events.c $(OUTPUT)pmu-events/pmu-events.c.new\n'
+        replacement3='\tcp $(OUTPUT)pmu-events/pmu-events.c.new $(OUTPUT)pmu-events/pmu-events.c'
+        sed -i -e "s,$target,$replacement1$replacement2$replacement3,g" \
+                       "${S}/tools/perf/pmu-events/Build"
+    fi
+    # end reproducibility substitutions
 
     # We need to ensure the --sysroot option in CC is preserved
     if [ -e "${S}/tools/perf/Makefile.perf" ]; then
@@ -231,8 +293,21 @@ do_configure_prepend () {
     fi
 
     # use /usr/bin/env instead of version specific python
-    for s in `find ${S}/tools/perf/scripts/python/ -name '*.py'`; do
-        sed -i 's,/usr/bin/python2,/usr/bin/env python,' "${s}"
+    for s in `find ${S}/tools/perf/ -name '*.py'` `find ${S}/scripts/ -name 'bpf_helpers_doc.py'`; do
+        sed -i -e "s,#!.*python.*,#!${USRBINPATH}/env python3," ${s}
+    done
+
+    # unistd.h can be out of sync between libc-headers and the captured version in the perf source
+    # so we copy it from the sysroot unistd.h to the perf unistd.h
+    install -D -m0644 ${STAGING_INCDIR}/asm-generic/unistd.h ${S}/tools/include/uapi/asm-generic/unistd.h
+    install -D -m0644 ${STAGING_INCDIR}/asm-generic/unistd.h ${S}/include/uapi/asm-generic/unistd.h
+
+    # the fetcher is inhibited by the 'inherit kernelsrc', so we do a quick check and
+    # copy for a helper script we need
+    for p in $(echo ${FILESPATH} | tr ':' '\n'); do
+	if [ -e $p/sort-pmuevents.py ]; then
+	    cp $p/sort-pmuevents.py ${S}
+	fi
     done
 }
 
@@ -247,14 +322,15 @@ PACKAGES =+ "${PN}-archive ${PN}-tests ${PN}-perl ${PN}-python"
 
 RDEPENDS_${PN} += "elfutils bash"
 RDEPENDS_${PN}-archive =+ "bash"
-RDEPENDS_${PN}-python =+ "bash python python-modules ${@bb.utils.contains('PACKAGECONFIG', 'audit', 'audit-python', '', d)}"
+RDEPENDS_${PN}-python =+ "bash python3 python3-modules ${@bb.utils.contains('PACKAGECONFIG', 'audit', 'audit-python3', '', d)}"
 RDEPENDS_${PN}-perl =+ "bash perl perl-modules"
-RDEPENDS_${PN}-tests =+ "python"
+RDEPENDS_${PN}-tests =+ "python3"
 
 RSUGGESTS_SCRIPTING = "${@bb.utils.contains('PACKAGECONFIG', 'scripting', '${PN}-perl ${PN}-python', '',d)}"
 RSUGGESTS_${PN} += "${PN}-archive ${PN}-tests ${RSUGGESTS_SCRIPTING}"
 
-FILES_${PN} += "${libexecdir}/perf-core ${exec_prefix}/libexec/perf-core ${libdir}/traceevent"
+FILES_SOLIBSDEV = ""
+FILES_${PN} += "${libexecdir}/perf-core ${exec_prefix}/libexec/perf-core ${libdir}/traceevent ${libdir}/libperf-jvmti.so"
 FILES_${PN}-archive = "${libdir}/perf/perf-core/perf-archive"
 FILES_${PN}-tests = "${libdir}/perf/perf-core/tests ${libexecdir}/perf-core/tests"
 FILES_${PN}-python = " \
@@ -265,3 +341,4 @@ FILES_${PN}-perl = "${libexecdir}/perf-core/scripts/perl"
 
 
 INHIBIT_PACKAGE_DEBUG_SPLIT="1"
+DEBUG_OPTIMIZATION_append = " -Wno-error=maybe-uninitialized"

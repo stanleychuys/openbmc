@@ -8,7 +8,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=e3fc50a88d0a364313df4b21ef20c29e"
 
 inherit allarch
 inherit obmc-phosphor-systemd
-inherit setuptools
+inherit setuptools3
 
 RDEPENDS_${PN} += " \
         python-netserver \
@@ -22,6 +22,6 @@ SYSTEMD_SERVICE_${PN} += "rest-dbus.service rest-dbus.socket"
 
 SRC_URI += "git://github.com/openbmc/rest-dbus.git"
 
-SRCREV = "403ce23066a8b0f0dca23220530b8760748b168e"
+SRCREV = "9273a302e8f2b3c3e939dff77758e90f163bf6a1"
 
 S = "${WORKDIR}/git"

@@ -1,3 +1,7 @@
+#
+# SPDX-License-Identifier: MIT
+#
+
 import os
 import sys
 import errno
@@ -12,7 +16,7 @@ class BaseDumper(object):
         self.cmds = []
         # Some testing doesn't inherit testimage, so it is needed
         # to set some defaults.
-        self.parent_dir = parent_dir or "/tmp/oe-saved-tests"
+        self.parent_dir = parent_dir
         dft_cmds = """  top -bn1
                         iostat -x -z -N -d -p ALL 20 2
                         ps -ef
@@ -67,8 +71,11 @@ class HostDumper(BaseDumper):
     def dump_host(self, dump_dir=""):
         if dump_dir:
             self.dump_dir = dump_dir
+        env = os.environ.copy()
+        env['PATH'] = '/usr/sbin:/sbin:/usr/bin:/bin'
+        env['COLUMNS'] = '9999'
         for cmd in self.cmds:
-            result = runCmd(cmd, ignore_status=True)
+            result = runCmd(cmd, ignore_status=True, env=env)
             self._write_dump(cmd.split()[0], result.output)
 
 class TargetDumper(BaseDumper):

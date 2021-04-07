@@ -49,7 +49,7 @@ inherit systemd
 inherit useradd
 
 _INSTALL_SD_UNITS=""
-SYSTEMD_DEFAULT_TARGET ?= "obmc-standby.target"
+SYSTEMD_DEFAULT_TARGET ?= "multi-user.target"
 envfiledir ?= "${sysconfdir}/default"
 
 # Big ugly hack to prevent useradd.bbclass post-parse sanity checker failure.
@@ -65,17 +65,17 @@ def SystemdUnit(unit):
             self.unit = unit
 
         def __getattr__(self, item):
-            if item is 'name':
+            if item == 'name':
                 return self.unit
-            if item is 'is_activated':
+            if item == 'is_activated':
                 return self.unit.startswith('dbus-')
-            if item is 'is_template':
+            if item == 'is_template':
                 return '@.' in self.unit
-            if item is 'is_instance':
+            if item == 'is_instance':
                 return '@' in self.unit and not self.is_template
             if item in ['is_service', 'is_target']:
                 return self.unit.split('.')[-1] == item
-            if item is 'base':
+            if item == 'base':
                 cls = self.unit.split('.')[-1]
                 base = self.unit.replace('dbus-', '')
                 base = base.replace('.%s' % cls, '')
@@ -84,13 +84,13 @@ def SystemdUnit(unit):
                 if self.is_template:
                     base = base.rstrip('@')
                 return base
-            if item is 'instance' and self.is_instance:
+            if item == 'instance' and self.is_instance:
                 inst = self.unit.rsplit('@')[-1]
                 return inst.rsplit('.')[0]
-            if item is 'template' and self.is_instance:
+            if item == 'template' and self.is_instance:
                 cls = self.unit.split('.')[-1]
                 return '%s@.%s' % (self.base, cls)
-            if item is 'template' and self.is_template:
+            if item == 'template' and self.is_template:
                 return '.'.join(self.base.split('@')[:-1])
 
             raise AttributeError(item)
@@ -110,7 +110,9 @@ python() {
         searchpaths = d.getVar('FILESPATH', True)
         path = bb.utils.which(searchpaths, '%s' % unit.name)
         if not os.path.isfile(path):
-            bb.fatal('Did not find unit file "%s"' % unit.name)
+            # Unit does not exist in tree. Allow it to install from repo.
+            # Return False here to indicate it does not exist.
+            return False
 
         parser = systemd_parse_unit(d, path)
         inhibit = listvar_to_list(d, 'INHIBIT_SYSTEMD_RESTART_POLICY_WARNING')
@@ -120,6 +122,7 @@ python() {
                 not parser.has_option('Service', 'Restart'):
             bb.warn('Systemd unit \'%s\' does not '
                 'have a restart policy defined.' % unit.name)
+        return True
 
 
     def add_default_subs(d, file):
@@ -127,14 +130,22 @@ python() {
                 'base_bindir',
                 'bindir',
                 'sbindir',
+                'libexecdir',
                 'envfiledir',
                 'sysconfdir',
+                'localstatedir',
+                'datadir',
                 'SYSTEMD_DEFAULT_TARGET' ]:
             set_append(d, 'SYSTEMD_SUBSTITUTIONS',
                 '%s:%s:%s' % (x, d.getVar(x, True), file))
 
 
-    def add_sd_unit(d, unit, pkg):
+    def add_sd_unit(d, unit, pkg, unit_exist):
+        # Do not add unit if it does not exist in tree.
+        # It will be installed from repo.
+        if not unit_exist:
+            return
+
         name = unit.name
         unit_dir = d.getVar('systemd_system_unitdir', True)
         set_append(d, 'SRC_URI', 'file://%s' % name)
@@ -154,11 +165,11 @@ python() {
 
         var = 'SYSTEMD_USER_%s' % file
         user = listvar_to_list(d, var)
-        if len(user) is 0:
+        if len(user) == 0:
             var = 'SYSTEMD_USER_%s' % pkg
             user = listvar_to_list(d, var)
-        if len(user) is not 0:
-            if len(user) is not 1:
+        if len(user) != 0:
+            if len(user) != 1:
                 bb.fatal('Too many users assigned to %s: \'%s\'' % (var, ' '.join(user)))
 
             user = user[0]
@@ -216,8 +227,8 @@ python() {
         svc = [x for x in svc if not x.is_instance]
 
         for unit in tmpl + svc:
-            check_sd_unit(d, unit)
-            add_sd_unit(d, unit, pkg)
+            unit_exist = check_sd_unit(d, unit)
+            add_sd_unit(d, unit, pkg, unit_exist)
             add_sd_user(d, unit.name, pkg)
         for name in listvar_to_list(d, 'SYSTEMD_ENVIRONMENT_FILE_%s' % pkg):
             add_env_file(d, name, pkg)
@@ -328,6 +339,9 @@ do_install_append() {
                 sed -i -e 's,@BASE_BINDIR@,${base_bindir},g' \
                         -e 's,@BINDIR@,${bindir},g' \
                         -e 's,@SBINDIR@,${sbindir},g' \
+                        -e 's,@LIBEXECDIR@,${libexecdir},g' \
+                        -e 's,@LOCALSTATEDIR@,${localstatedir},g' \
+                        -e 's,@DATADIR@,${datadir},g' \
                         ${D}${systemd_system_unitdir}/$s
         done
 }

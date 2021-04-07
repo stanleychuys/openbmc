@@ -12,7 +12,7 @@ inherit obmc-phosphor-ipmiprovider-symlink
 inherit obmc-phosphor-sdbus-service
 inherit obmc-phosphor-systemd
 inherit phosphor-ipmi-host
-inherit pythonnative
+inherit python3native
 
 def ipmi_whitelists(d):
     whitelists = d.getVar(
@@ -23,48 +23,47 @@ def ipmi_whitelists(d):
 
 DEPENDS += "autoconf-archive-native"
 DEPENDS += "nlohmann-json"
-DEPENDS += "obmc-targets"
+DEPENDS += "phosphor-state-manager"
 DEPENDS += "${@ipmi_whitelists(d)}"
 DEPENDS += "phosphor-dbus-interfaces"
 DEPENDS += "phosphor-logging"
 DEPENDS += "phosphor-mapper"
 DEPENDS += "sdbusplus"
-DEPENDS += "sdbus++-native"
+DEPENDS += "${PYTHON_PN}-sdbus++-native"
 DEPENDS += "virtual/phosphor-ipmi-inventory-sel"
 DEPENDS += "virtual/phosphor-ipmi-fru-merge-config"
 DEPENDS += "virtual/phosphor-ipmi-sensor-inventory"
-DEPENDS += "virtual/phosphor-ipmi-channel-config"
 DEPENDS += "boost"
 DEPENDS += "sdeventplus"
+DEPENDS += "${PYTHON_PN}-native"
+DEPENDS += "${PYTHON_PN}-pyyaml-native"
+DEPENDS += "${PYTHON_PN}-mako-native"
 
 VIRTUAL-RUNTIME_ipmi-config ?= "phosphor-ipmi-config"
 
 RDEPENDS_${PN}-dev += "phosphor-logging"
 RDEPENDS_${PN}-dev += "phosphor-mapper-dev"
 RDEPENDS_${PN} += "clear-once"
-RDEPENDS_${PN} += "libmapper"
-RDEPENDS_${PN} += "network"
-RDEPENDS_${PN} += "phosphor-dbus-interfaces"
-RDEPENDS_${PN} += "phosphor-mapper"
+RDEPENDS_${PN} += "phosphor-network"
 RDEPENDS_${PN} += "phosphor-time-manager"
-RDEPENDS_${PN} += "sdbusplus"
 RDEPENDS_${PN} += "${VIRTUAL-RUNTIME_ipmi-config}"
 RDEPENDS_${PN} += "virtual/obmc-watchdog"
+RDEPENDS_${PN} += "${VIRTUAL-RUNTIME_obmc-bmc-state-manager}"
+RDEPENDS_${PN} += "${VIRTUAL-RUNTIME_obmc-bmc-version}"
+RDEPENDS_${PN} += "${VIRTUAL-RUNTIME_obmc-bmc-updater}"
 
 inherit useradd
 
 USERADD_PACKAGES = "${PN}"
 # add ipmi group
 GROUPADD_PARAM_${PN} = "ipmi"
-# Add root user to ipmi group
-GROUPMEMS_PARAM_${PN} = "-g ipmi -a root"
 
 SYSTEMD_SERVICE_${PN} += "xyz.openbmc_project.Ipmi.Internal.SoftPowerOff.service phosphor-ipmi-host.service"
 
-RRECOMMENDS_${PN} += "${VIRTUAL-RUNTIME_obmc-settings-mgmt}"
+RRECOMMENDS_${PN} += "phosphor-settings-manager"
 
 
-require ${PN}.inc
+require ${BPN}.inc
 
 # Setup IPMI Whitelist Conf files
 WHITELIST_CONF = " \
@@ -72,12 +71,12 @@ WHITELIST_CONF = " \
         ${S}/host-ipmid-whitelist.conf \
         "
 EXTRA_OECONF = " \
-        WHITELIST_CONF="${WHITELIST_CONF}" \
         SENSOR_YAML_GEN=${STAGING_DIR_NATIVE}${sensor_datadir}/sensor.yaml \
         INVSENSOR_YAML_GEN=${STAGING_DIR_NATIVE}${sensor_datadir}/invsensor.yaml \
         FRU_YAML_GEN=${STAGING_DIR_NATIVE}${config_datadir}/fru_config.yaml \
-        CHANNEL_YAML_GEN=${STAGING_DIR_NATIVE}${sensor_datadir}/channel.yaml \
-        POWER_READING_SENSOR=${datadir}/ipmi-providers/power_reading.json\
+        "
+EXTRA_OECONF_append = " \
+        WHITELIST_CONF="${WHITELIST_CONF}" \
         "
 
 S = "${WORKDIR}/git"

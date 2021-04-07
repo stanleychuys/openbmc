@@ -2,25 +2,43 @@ SUMMARY = "Entity Manager"
 DESCRIPTION = "Entity Manager provides d-bus configuration data \
 and configures system sensors"
 
-SRC_URI = "git://github.com/openbmc/entity-manager.git"
-SRCREV = "554fd8ddc88a833c38c7cd025b38fd44344533d3"
+SRC_URI = "git://github.com/openbmc/entity-manager.git file://blocklist.json"
+SRCREV = "97353ed26200a7d1c29d8e85983fb7d9bd7b94aa"
 PV = "0.1+git${SRCPV}"
 
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENCE;md5=a6a4edad4aed50f39a66d098d74b265b"
 
-SYSTEMD_SERVICE_${PN} = "xyz.openbmc_project.EntityManager.service \
-                         xyz.openbmc_project.FruDevice.service"
-
-PROVIDES += "virtual/phosphor-fans-sensor-inventory"
 DEPENDS = "boost \
-           i2c-tools \
+           dbus \
            nlohmann-json \
            sdbusplus \
            valijson"
 
-S = "${WORKDIR}/git/"
-inherit cmake systemd
+S = "${WORKDIR}/git"
+inherit meson systemd
 
-EXTRA_OECMAKE = "-DYOCTO=1 -DUSE_OVERLAYS=0"
+EXTRA_OEMESON = "-Dtests=disabled"
 
+PACKAGECONFIG ??= "ipmi-fru"
+PACKAGECONFIG[ipmi-fru] = "-Dfru-device=true, -Dfru-device=false, i2c-tools,"
+
+EXTRA_ENTITY_MANAGER_PACKAGES = " \
+    ${@bb.utils.contains('PACKAGECONFIG', 'ipmi-fru', 'fru-device', '', d)} \
+    "
+
+PACKAGE_BEFORE_PN = "${EXTRA_ENTITY_MANAGER_PACKAGES}"
+
+do_install_append() {
+    install -D ${WORKDIR}/blocklist.json ${D}${datadir}/${BPN}/blacklist.json
+}
+
+FILES_${PN} += " \
+    ${datadir}/dbus-1/system-services/xyz.openbmc_project.EntityManager.service \
+    "
+FILES_fru-device = "${bindir}/fru-device ${datadir}/${BPN}/blacklist.json"
+
+SYSTEMD_PACKAGES = "${PN} ${EXTRA_ENTITY_MANAGER_PACKAGES}"
+SYSTEMD_SERVICE_${PN} = "xyz.openbmc_project.EntityManager.service"
+SYSTEMD_SERVICE_fru-device = "xyz.openbmc_project.FruDevice.service"
+SYSTEMD_AUTO_ENABLE_fru-device_ibm-power-cpu = "disable"

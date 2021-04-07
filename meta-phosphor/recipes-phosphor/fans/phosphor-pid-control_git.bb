@@ -6,15 +6,14 @@ PV = "0.1+git${SRCPV}"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-inherit flto-automake pkgconfig
-inherit pythonnative
+inherit autotools pkgconfig
 
-inherit phosphor-pid-control
 inherit obmc-phosphor-ipmiprovider-symlink
+inherit systemd
 
 S = "${WORKDIR}/git"
 SRC_URI = "git://github.com/openbmc/phosphor-pid-control"
-SRCREV = "e54c7fffbbbe39e6426e395f0ef846ec91b722d6"
+SRCREV = "d11a732a802cc281f4c1583275871fbc5f5ecced"
 
 # Each platform will need a service file that starts
 # at an appropriate time per system.  For instance, if
@@ -22,21 +21,26 @@ SRCREV = "e54c7fffbbbe39e6426e395f0ef846ec91b722d6"
 # sensors then it may be prudent to wait for all of them.
 
 DEPENDS += "autoconf-archive-native"
-DEPENDS += "python-pyyaml-native"
-DEPENDS += "python-mako-native"
 DEPENDS += "sdbusplus"
+DEPENDS += "phosphor-dbus-interfaces"
 DEPENDS += "phosphor-logging"
 DEPENDS += "libevdev"
-DEPENDS += "libconfig"
+DEPENDS += "nlohmann-json"
+DEPENDS += "cli11"
+DEPENDS += "boost"
 
-# We depend on someone providing their system's configuration.
-DEPENDS += "virtual/phosphor-fans-sensor-inventory"
 # We depend on this to be built first so we can build our providers.
 DEPENDS += "phosphor-ipmi-host"
 
-RDEPENDS_${PN} += "sdbusplus phosphor-dbus-interfaces"
+SERVICE_FILE = "phosphor-pid-control.service"
+SYSTEMD_PACKAGES = "${PN}"
+SYSTEMD_SERVICE_${PN} = "${SERVICE_FILE}"
 
-FILES_${PN} = "${sbindir}/swampd ${sbindir}/setsensor"
+EXTRA_OECONF = " \
+  SYSTEMD_TARGET="multi-user.target" \
+       "
+
+FILES_${PN} = "${bindir}/swampd ${bindir}/setsensor"
 
 # The following installs the OEM IPMI handler for the fan controls.
 FILES_${PN}_append = " ${libdir}/ipmid-providers/lib*${SOLIBS}"
@@ -44,8 +48,9 @@ FILES_${PN}_append = " ${libdir}/host-ipmid/lib*${SOLIBS}"
 FILES_${PN}_append = " ${libdir}/net-ipmid/lib*${SOLIBS}"
 FILES_${PN}-dev_append = " ${libdir}/ipmid-providers/lib*${SOLIBSDEV} ${libdir}/ipmid-providers/*.la"
 
-EXTRA_OECONF = "SENSOR_YAML_GEN=${STAGING_DIR_NATIVE}${sensor_datadir}/sensor-list.yaml \
-                PID_YAML_GEN=${STAGING_DIR_NATIVE}${sensor_datadir}/pid-list.yaml \
-                ZONE_YAML_GEN=${STAGING_DIR_NATIVE}${sensor_datadir}/zone-info.yaml"
-
 HOSTIPMI_PROVIDER_LIBRARY += "libmanualcmds.so"
+
+config_datadir="${datadir}/swampd/"
+# config_path is the location swampd expects to find a json configuration.
+# the file is expected to be named config.json
+config_path="${config_datadir}config.json"

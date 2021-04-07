@@ -1,10 +1,13 @@
+#
+# SPDX-License-Identifier: MIT
+#
+
 import os
 
 from subprocess import check_output
 from shutil import rmtree
 from oeqa.runtime.case import OERuntimeTestCase
 from oeqa.core.decorator.depends import OETestDepends
-from oeqa.core.decorator.oeid import OETestID
 from oeqa.core.decorator.data import skipIfDataVar
 from oeqa.runtime.decorator.package import OEHasPackage
 
@@ -52,11 +55,15 @@ common_errors = [
     "Failed to read /var/lib/nfs/statd/state: Success",
     "error retry time-out =",
     "logind: cannot setup systemd-logind helper (-61), using legacy fallback",
-    "Error changing net interface name 'eth0' to "
+    "Failed to rename network interface",
+    "Failed to process device, ignoring: Device or resource busy",
+    "Cannot find a map file",
+    "[rdrand]: Initialization Failed",
+    "[pulseaudio] authkey.c: Failed to open cookie file",
+    "[pulseaudio] authkey.c: Failed to load authentication key",
     ]
 
 video_related = [
-    "uvesafb",
 ]
 
 x86_common = [
@@ -69,6 +76,8 @@ x86_common = [
     'amd_nb: Cannot enumerate AMD northbridges',
     'failed to retrieve link info, disabling eDP',
     'Direct firmware load for iwlwifi',
+    'Direct firmware load for regulatory.db',
+    'failed to load regulatory.db',
 ] + common_errors
 
 qemux86_common = [
@@ -76,8 +85,9 @@ qemux86_common = [
     "fail to add MMCONFIG information, can't access extended PCI configuration space under this bridge.",
     "can't claim BAR ",
     'amd_nb: Cannot enumerate AMD northbridges',
-    'uvesafb: 5000 ms task timeout, infinitely waiting',
     'tsc: HPET/PMTIMER calibration failed',
+    "modeset(0): Failed to initialize the DRI2 extension",
+    "glamor initialization failed",
 ] + common_errors
 
 ignore_errors = {
@@ -104,6 +114,11 @@ ignore_errors = {
         'can\'t handle BAR above 4GB',
         'Cannot reserve Legacy IO',
         ] + common_errors,
+    'qemuppc64' : [
+        'vio vio: uevent: failed to send synthetic uevent',
+        'synth uevent: /devices/vio: failed to send uevent',
+        'PCI 0000:00 Cannot reserve Legacy IO [io  0x10000-0x10fff]',
+        ] + common_errors,
     'qemuarm' : [
         'mmci-pl18x: probe of fpga:05 failed with error -22',
         'mmci-pl18x: probe of fpga:0b failed with error -22',
@@ -113,6 +128,7 @@ ignore_errors = {
         'OF: amba_device_add() failed (-19) for /amba/sctl@101e0000',
         'OF: amba_device_add() failed (-19) for /amba/watchdog@101e1000',
         'OF: amba_device_add() failed (-19) for /amba/sci@101f0000',
+        'OF: amba_device_add() failed (-19) for /amba/spi@101f4000',
         'OF: amba_device_add() failed (-19) for /amba/ssp@101f4000',
         'OF: amba_device_add() failed (-19) for /amba/fpga/sci@a000',
         'Failed to initialize \'/amba/timer@101e3000\': -22',
@@ -123,6 +139,7 @@ ignore_errors = {
         '(EE) Server terminated with error (1). Closing log file.',
         'dmi: Firmware registration failed.',
         'irq: type mismatch, failed to map hwirq-27 for /intc',
+        'logind: failed to get session seat',
         ] + common_errors,
     'intel-core2-32' : [
         'ACPI: No _BQC method, cannot determine initial brightness',
@@ -161,7 +178,18 @@ ignore_errors = {
         'The driver is built-in, so to load the firmware you need to',
         ] + x86_common,
     'edgerouter' : [
+        'not creating \'/sys/firmware/fdt\'',
+        'Failed to find cpu0 device node',
         'Fatal server error:',
+        'Server terminated with error',
+        ] + common_errors,
+    'beaglebone-yocto' : [
+        'Direct firmware load for regulatory.db',
+        'failed to load regulatory.db',
+        'l4_wkup_cm',
+        'Failed to load module "glx"',
+        'Failed to make EGL context current',
+        'glamor initialization failed',
         ] + common_errors,
 }
 
@@ -270,7 +298,7 @@ class ParseLogsTest(OERuntimeTestCase):
         grepcmd = 'grep '
         grepcmd += '-Ei "'
         for error in errors:
-            grepcmd += error + '|'
+            grepcmd += '\<' + error + '\>' + '|'
         grepcmd = grepcmd[:-1]
         grepcmd += '" ' + str(log) + " | grep -Eiv \'"
 
@@ -332,7 +360,6 @@ class ParseLogsTest(OERuntimeTestCase):
     def write_dmesg(self):
         (status, dmesg) = self.target.run('dmesg > /tmp/dmesg_output.log')
 
-    @OETestID(1059)
     @OETestDepends(['ssh.SSHTest.test_ssh'])
     def test_parselogs(self):
         self.write_dmesg()

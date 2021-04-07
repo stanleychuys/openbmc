@@ -1,6 +1,6 @@
 RDEPENDS_${PN}_append = " \
         nativesdk-autoconf-archive \
-        nativesdk-phosphor-dbus-interfaces-yaml \
-        nativesdk-sdbus++ \
+        nativesdk-meson \
+        nativesdk-python3-sdbus++ \
         nativesdk-phosphor-logging-elog \
         "

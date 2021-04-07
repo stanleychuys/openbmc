@@ -11,17 +11,18 @@ inherit obmc-phosphor-dbus-service
 
 DEPENDS += "autoconf-archive-native"
 DEPENDS += "sdbusplus"
+DEPENDS += "systemd"
 DEPENDS += "phosphor-dbus-interfaces"
-RDEPENDS_${PN} += "libsystemd"
+DEPENDS += "boost"
 
 DBUS_SERVICE_${PN} += "xyz.openbmc_project.led.controller@.service"
 
 SRC_URI += "git://github.com/openbmc/phosphor-led-sysfs"
 SRC_URI += "file://70-leds.rules"
-SRCREV = "e0844ff447abad01fa6f902caab3839336d1518d"
+SRCREV = "a8a275f635ff876186ce5783308e93368f205898"
 S = "${WORKDIR}/git"
 
 do_install_append() {
         install -d ${D}/${base_libdir}/udev/rules.d/
-        install ${WORKDIR}/70-leds.rules ${D}/${base_libdir}/udev/rules.d/
+        install -m 0644 ${WORKDIR}/70-leds.rules ${D}/${base_libdir}/udev/rules.d/
 }

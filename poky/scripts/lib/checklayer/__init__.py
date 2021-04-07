@@ -1,7 +1,9 @@
 # Yocto Project layer check tool
 #
 # Copyright (C) 2017 Intel Corporation
-# Released under the MIT license (see COPYING.MIT)
+#
+# SPDX-License-Identifier: MIT
+#
 
 import os
 import re
@@ -57,9 +59,14 @@ def _get_layer_collections(layer_path, lconf=None, data=None):
         pattern = ldata.getVar('BBFILE_PATTERN_%s' % name)
         depends = ldata.getVar('LAYERDEPENDS_%s' % name)
         compat = ldata.getVar('LAYERSERIES_COMPAT_%s' % name)
+        try:
+            depDict = bb.utils.explode_dep_versions2(depends or "")
+        except bb.utils.VersionStringException as vse:
+            bb.fatal('Error parsing LAYERDEPENDS_%s: %s' % (name, str(vse)))
+
         collections[name]['priority'] = priority
         collections[name]['pattern'] = pattern
-        collections[name]['depends'] = depends
+        collections[name]['depends'] = ' '.join(depDict.keys())
         collections[name]['compat'] = compat
 
     return collections
@@ -141,6 +148,9 @@ def detect_layers(layer_directories, no_auto):
 
 def _find_layer_depends(depend, layers):
     for layer in layers:
+        if 'collections' not in layer:
+            continue
+
         for collection in layer['collections']:
             if depend == collection:
                 return layer
@@ -196,38 +206,50 @@ def add_layer_dependencies(bblayersconf, layer, layers, logger):
     if layer_depends is None:
         return False
     else:
-        # Don't add a layer that is already present.
-        added = set()
-        output = check_command('Getting existing layers failed.', 'bitbake-layers show-layers').decode('utf-8')
-        for layer, path, pri in re.findall(r'^(\S+) +([^\n]*?) +(\d+)$', output, re.MULTILINE):
-            added.add(path)
+        add_layers(bblayersconf, layer_depends, logger)
 
-        for layer_depend in layer_depends:
-            name = layer_depend['name']
-            path = layer_depend['path']
+    return True
+
+def add_layers(bblayersconf, layers, logger):
+    # Don't add a layer that is already present.
+    added = set()
+    output = check_command('Getting existing layers failed.', 'bitbake-layers show-layers').decode('utf-8')
+    for layer, path, pri in re.findall(r'^(\S+) +([^\n]*?) +(\d+)$', output, re.MULTILINE):
+        added.add(path)
+
+    with open(bblayersconf, 'a+') as f:
+        for layer in layers:
+            logger.info('Adding layer %s' % layer['name'])
+            name = layer['name']
+            path = layer['path']
             if path in added:
-                continue
+                logger.info('%s is already in %s' % (name, bblayersconf))
             else:
                 added.add(path)
-            logger.info('Adding layer dependency %s' % name)
-            with open(bblayersconf, 'a+') as f:
                 f.write("\nBBLAYERS += \"%s\"\n" % path)
     return True
 
-def add_layer(bblayersconf, layer, layers, logger):
-    logger.info('Adding layer %s' % layer['name'])
-    with open(bblayersconf, 'a+') as f:
-        f.write("\nBBLAYERS += \"%s\"\n" % layer['path'])
+def check_bblayers(bblayersconf, layer_path, logger):
+    '''
+    If layer_path found in BBLAYERS return True
+    '''
+    import bb.parse
+    import bb.data
 
-    return True
+    ldata = bb.parse.handle(bblayersconf, bb.data.init(), include=True)
+    for bblayer in (ldata.getVar('BBLAYERS') or '').split():
+        if os.path.normpath(bblayer) == os.path.normpath(layer_path):
+            return True
 
-def check_command(error_msg, cmd):
+    return False
+
+def check_command(error_msg, cmd, cwd=None):
     '''
     Run a command under a shell, capture stdout and stderr in a single stream,
     throw an error when command returns non-zero exit code. Returns the output.
     '''
 
-    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cwd)
     output, _ = p.communicate()
     if p.returncode:
         msg = "%s\nCommand: %s\nOutput:\n%s" % (error_msg, cmd, output.decode('utf-8'))
@@ -245,7 +267,7 @@ def get_signatures(builddir, failsafe=False, machine=None):
     sigs = {}
     tune2tasks = {}
 
-    cmd = ''
+    cmd = 'BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE BB_SIGNATURE_HANDLER" BB_SIGNATURE_HANDLER="OEBasicHash" '
     if machine:
         cmd += 'MACHINE=%s ' % machine
     cmd += 'bitbake '
@@ -257,7 +279,7 @@ def get_signatures(builddir, failsafe=False, machine=None):
         os.unlink(sigs_file)
     try:
         check_command('Generating signatures failed. This might be due to some parse error and/or general layer incompatibilities.',
-                      cmd)
+                      cmd, builddir)
     except RuntimeError as ex:
         if failsafe and os.path.exists(sigs_file):
             # Ignore the error here. Most likely some recipes active

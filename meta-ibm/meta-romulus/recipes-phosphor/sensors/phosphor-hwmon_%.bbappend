@@ -1,9 +1,9 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS_prepend_romulus := "${THISDIR}/${PN}:"
 
 EXTRA_OECONF_append_romulus = " --enable-negative-errno-on-fail"
 
 CHIPS = " \
-        i2c@1e78a000/i2c-bus@440/w83773g@4c \
+        bus@1e78a000/i2c-bus@440/w83773g@4c \
         pwm-tacho-controller@1e786000 \
         "
 ITEMSFMT = "ahb/apb/{0}.conf"
@@ -21,5 +21,5 @@ OCCSFMT = "devices/platform/gpio-fsi/fsi0/slave@00--00/{0}.conf"
 OCCITEMS = "${@compose_list(d, 'OCCSFMT', 'OCCS')}"
 
 ENVS = "obmc/hwmon/{0}"
-SYSTEMD_ENVIRONMENT_FILE_${PN} += "${@compose_list(d, 'ENVS', 'ITEMS')}"
-SYSTEMD_ENVIRONMENT_FILE_${PN} += "${@compose_list(d, 'ENVS', 'OCCITEMS')}"
+SYSTEMD_ENVIRONMENT_FILE_${PN}_append_romulus = " ${@compose_list(d, 'ENVS', 'ITEMS')}"
+SYSTEMD_ENVIRONMENT_FILE_${PN}_append_romulus = " ${@compose_list(d, 'ENVS', 'OCCITEMS')}"

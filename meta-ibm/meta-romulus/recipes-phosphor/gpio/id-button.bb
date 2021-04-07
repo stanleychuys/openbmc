@@ -1,7 +1,7 @@
 SUMMARY = "Romulus ID Button pressed application"
 PR = "r1"
 LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://${IBMBASE}/COPYING.apache-2.0;md5=34400b68072d710fecd0a2940a0d1658"
+LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/Apache-2.0;md5=89aea4e17d99a7cacdbeed46a0096b10"
 
 inherit obmc-phosphor-systemd
 
@@ -23,7 +23,7 @@ ID_BUTTON_SERVICE = "id_button"
 
 TMPL = "phosphor-gpio-monitor@.service"
 INSTFMT = "phosphor-gpio-monitor@{0}.service"
-TGT = "${SYSTEMD_DEFAULT_TARGET}"
+TGT = "multi-user.target"
 FMT = "../${TMPL}:${TGT}.requires/${INSTFMT}"
 
 SYSTEMD_SERVICE_${PN} += "id-button-pressed.service"

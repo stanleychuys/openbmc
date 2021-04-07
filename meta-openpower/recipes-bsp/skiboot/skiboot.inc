@@ -1,15 +1,14 @@
 HOMEPAGE = "https://github.com/open-power"
 LICENSE = "Apache-2.0"
 
-SRC_URI += "git://github.com/open-power/skiboot.git"
-SRC_URI += "file://0001-libffs-fix-gcc8-stringop-truncation-warnings.patch"
+SRC_URI += "git://github.com/open-power/skiboot.git;branch=skiboot-6.5.x"
 
-FILESEXTRAPATHS_append := "${THISDIR}/skiboot:"
+FILESEXTRAPATHS_prepend := "${THISDIR}/skiboot:"
 
 LIC_FILES_CHKSUM = "file://${S}/LICENCE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-SRCREV = "30f8a6006de45fadedd80c98059b63d3874a5269"
-PV = "6.0.13+git${SRCPV}"
+SRCREV = "aff9301bb341b5387228e82036a7d72e519d8855"
+PV = "6.5.1+git${SRCPV}"
 
 S = "${WORKDIR}/git"
 
@@ -26,3 +25,8 @@ do_compile() {
 do_install() {
     oe_runmake -C ${SKIBOOT_SUBDIR} install DESTDIR=${D} prefix=/usr PREFIX=$prefix
 }
+
+# libflash.so is a SONAME and is strongly required in the production
+INSANE_SKIP_${PN}_append = "dev-so"
+FILES_SOLIBSDEV = ""
+FILES_${PN}_append = " ${libdir}/libflash.so"

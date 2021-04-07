@@ -1,23 +1,27 @@
+#
+# SPDX-License-Identifier: MIT
+#
+
 import re
 
 from oeqa.runtime.case import OERuntimeTestCase
 from oeqa.core.decorator.depends import OETestDepends
-from oeqa.core.decorator.oeid import OETestID
+from oeqa.runtime.decorator.package import OEHasPackage
 
 class DateTest(OERuntimeTestCase):
 
     def setUp(self):
         if self.tc.td.get('VIRTUAL-RUNTIME_init_manager') == 'systemd':
             self.logger.debug('Stopping systemd-timesyncd daemon')
-            self.target.run('systemctl stop systemd-timesyncd')
+            self.target.run('systemctl disable --now systemd-timesyncd')
 
     def tearDown(self):
         if self.tc.td.get('VIRTUAL-RUNTIME_init_manager') == 'systemd':
             self.logger.debug('Starting systemd-timesyncd daemon')
-            self.target.run('systemctl start systemd-timesyncd')
+            self.target.run('systemctl enable --now systemd-timesyncd')
 
-    @OETestID(211)
     @OETestDepends(['ssh.SSHTest.test_ssh'])
+    @OEHasPackage(['coreutils', 'busybox'])
     def test_date(self):
         (status, output) = self.target.run('date +"%Y-%m-%d %T"')
         msg = 'Failed to get initial date, output: %s' % output

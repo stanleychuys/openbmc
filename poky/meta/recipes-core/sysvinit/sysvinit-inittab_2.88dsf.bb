@@ -1,6 +1,6 @@
 SUMMARY = "Inittab configuration for SysVinit"
 LICENSE = "GPLv2"
-LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/GPL-2.0;md5=801f80980d171dd6425610833a22dbe6"
+LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/GPL-2.0-only;md5=801f80980d171dd6425610833a22dbe6"
 
 PR = "r10"
 
@@ -20,6 +20,7 @@ do_install() {
     install -m 0644 ${WORKDIR}/inittab ${D}${sysconfdir}/inittab
     install -d ${D}${base_bindir}
     install -m 0755 ${WORKDIR}/start_getty ${D}${base_bindir}/start_getty
+    sed -e 's,/usr/bin,${bindir},g' -i ${D}${base_bindir}/start_getty
 
     set -x
     tmp="${SERIAL_CONSOLES}"
@@ -50,6 +51,10 @@ EOF
         done
         echo "" >> ${D}${sysconfdir}/inittab
     fi
+}
+
+do_install_append_qemuppc64 () {
+            echo "9:12345:respawn:${base_sbindir}/getty 38400 hvc0" >> ${D}${sysconfdir}/inittab
 }
 
 pkg_postinst_${PN} () {
@@ -89,5 +94,4 @@ CONFFILES_${PN} = "${sysconfdir}/inittab"
 USE_VT ?= "1"
 SYSVINIT_ENABLED_GETTYS ?= "1"
 
-
-
+RCONFLICTS_${PN} = "busybox-inittab"

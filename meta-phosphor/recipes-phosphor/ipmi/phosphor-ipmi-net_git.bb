@@ -7,28 +7,46 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=e3fc50a88d0a364313df4b21ef20c29e"
 
 inherit autotools pkgconfig
-inherit obmc-phosphor-systemd
+inherit systemd
 
 DEPENDS += "autoconf-archive-native"
+DEPENDS += "cli11"
 DEPENDS += "phosphor-mapper"
 DEPENDS += "systemd"
 DEPENDS += "phosphor-ipmi-host"
-RDEPENDS_${PN} += "libmapper"
-RDEPENDS_${PN} += "libsystemd"
-RDEPENDS_${PN} += "iptables"
+
+RRECOMMENDS_${PN} = "pam-ipmi"
 
 SRC_URI += "git://github.com/openbmc/phosphor-net-ipmid"
-SRC_URI += "file://ipmi-net-firewall.sh"
-SRCREV = "744b3c8b840a13ed4a6c07836ead4a0c88911437"
+SRCREV = "29086950c2300fe8bd5791896b1209a31a1c93e6"
 
 S = "${WORKDIR}/git"
 
-do_install_append() {
-        install -m 0755 ${WORKDIR}/ipmi-net-firewall.sh \
-        ${D}${sbindir}/ipmi-net-firewall.sh
-}
-
-SYSTEMD_SERVICE_${PN} = " \
-        ${PN}.service \
-        ${PN}.socket \
+FILES_${PN} += " \
+        ${systemd_system_unitdir}/${PN}@.service \
+        ${systemd_system_unitdir}/${PN}@.socket \
         "
+
+# If RMCPP_IFACE is not set by bbappend, set it to default
+DEFAULT_RMCPP_IFACE = "eth0"
+RMCPP_IFACE ?= "${DEFAULT_RMCPP_IFACE}"
+
+# install parameterized service and socket files
+SYSTEMD_SERVICE_${PN} = " \
+        ${PN}@${RMCPP_IFACE}.service \
+        ${PN}@${RMCPP_IFACE}.socket \
+        "
+
+# To add another RMCPP interface, add similar lines to the
+# following lines in a bbappend:
+#
+# ALT_RMCPP_IFACE = "eth1"
+# SYSTEMD_SERVICE_${PN} += " \
+#     ${PN}@${ALT_RMCPP_IFACE}.service \
+#     ${PN}@${ALT_RMCPP_IFACE}.socket \
+#     "
+
+# Also, be sure to enable a corresponding entry in the channel
+# config file with the same 'name' as the interfaces above
+# Override the default phosphor-ipmi-config.bb with a bbappend
+

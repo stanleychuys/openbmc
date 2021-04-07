@@ -11,7 +11,6 @@ Wants=mapper-wait@-xyz-openbmc_project-control-host0-restriction_mode.service
 After=mapper-wait@-xyz-openbmc_project-control-host0-restriction_mode.service
 Wants=clear-once.service
 After=clear-once.service
-Requires=org.openbmc.HostIpmi.service
 After=org.openbmc.HostIpmi.service
 
 [Service]
@@ -21,6 +20,9 @@ SyslogIdentifier=ipmid
 RuntimeDirectory = ipmi
 RuntimeDirectoryPreserve = yes
 StateDirectory = ipmi
+Type=dbus
+BusName=xyz.openbmc_project.Control.Host
 
 [Install]
-WantedBy={SYSTEMD_DEFAULT_TARGET}
+WantedBy=multi-user.target
+Alias=xyz.openbmc_project.Control.Host.service

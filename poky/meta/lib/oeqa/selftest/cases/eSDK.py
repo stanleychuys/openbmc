@@ -1,8 +1,12 @@
+#
+# SPDX-License-Identifier: MIT
+#
+
 import tempfile
 import shutil
 import os
 import glob
-from oeqa.core.decorator.oeid import OETestID
+import time
 from oeqa.selftest.case import OESelftestTestCase
 from oeqa.utils.commands import runCmd, bitbake, get_bb_var, get_bb_vars
 
@@ -31,7 +35,7 @@ class oeSDKExtSelfTest(OESelftestTestCase):
         if not 'shell' in options:
             options['shell'] = True
 
-        runCmd("cd %s; . %s; %s" % (tmpdir_eSDKQA, env_eSDK, cmd), **options)
+        runCmd("cd %s; unset BBPATH; unset BUILDDIR; . %s; %s" % (tmpdir_eSDKQA, env_eSDK, cmd), **options)
 
     @staticmethod
     def generate_eSDK(image):
@@ -95,17 +99,20 @@ SSTATE_MIRRORS =  "file://.* file://%s/PATH"
 
     @classmethod
     def tearDownClass(cls):
+        for i in range(0, 10):
+            if os.path.exists(os.path.join(cls.tmpdir_eSDKQA, 'bitbake.lock')):
+                time.sleep(1)
+            else:
+                break
         cls.tmpdirobj.cleanup()
         super().tearDownClass()
 
-    @OETestID(1602)
     def test_install_libraries_headers(self):
         pn_sstate = 'bc'
         bitbake(pn_sstate)
         cmd = "devtool sdk-install %s " % pn_sstate
         oeSDKExtSelfTest.run_esdk_cmd(self.env_eSDK, self.tmpdir_eSDKQA, cmd)
 
-    @OETestID(1603)
     def test_image_generation_binary_feeds(self):
         image = 'core-image-minimal'
         cmd = "devtool build-image %s" % image

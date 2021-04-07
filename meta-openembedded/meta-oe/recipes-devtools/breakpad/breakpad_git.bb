@@ -6,50 +6,54 @@ SUMMARY = "An open-source multi-platform crash reporting system"
 DESCRIPTION = "Breakpad is a library and tool suite that allows you to distribute an application to users with compiler-provided debugging information removed, record crashes in compact \"minidump\" files, send them back to your server, and produce C and C++ stack traces from these minidumps. "
 HOMEPAGE = "https://code.google.com/p/google-breakpad/"
 LICENSE = "BSD-3-Clause"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=56c24a43c81c3af6fcf590851931489e"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=8bb274ebd1901085fd71a8d8afe8831b"
 SECTION = "libs"
 
 inherit autotools
 
+DEPENDS_append_libc-musl = " libucontext"
+
 BBCLASSEXTEND = "native"
 
-PE = "1"
+PE = "2"
 
-PV = "1.0+git${SRCPV}"
+PV = "1.0"
 
 SRCREV_FORMAT = "breakpad_gtest_protobuf_lss_gyp"
 
-SRCREV_breakpad = "dea867e76f24e4a68395684b9d1cf24bcef82f20"
-SRCREV_gtest = "ec44c6c1675c25b9827aacd08c02433cccde7780"
+SRCREV_breakpad = "8b22babdf894e5aa98b2dbbe103f7e3856a71944"
+#v1.10.0
+SRCREV_gtest = "4fe018038f87675c083d0cfb6a6b57c274fb1753"
 SRCREV_protobuf = "cb6dd4ef5f82e41e06179dcd57d3b1d9246ad6ac"
-SRCREV_lss = "a91633d172407f6c83dd69af11510b37afebb7f9"
+SRCREV_lss = "fd00dbbd0c06a309c657d89e9430143b179ff6db"
 SRCREV_gyp = "324dd166b7c0b39d513026fa52d6280ac6d56770"
 
-SRC_URI = "git://github.com/google/breakpad;name=breakpad \
+SRC_URI = "git://github.com/google/breakpad;name=breakpad;branch=main \
            git://github.com/google/googletest.git;destsuffix=git/src/testing/gtest;name=gtest \
-           git://github.com/google/protobuf.git;destsuffix=git/src/third_party/protobuf/protobuf;name=protobuf \
-           git://chromium.googlesource.com/linux-syscall-support;protocol=https;destsuffix=git/src/third_party/lss;name=lss \
+           git://github.com/protocolbuffers/protobuf.git;destsuffix=git/src/third_party/protobuf/protobuf;name=protobuf \
+           git://chromium.googlesource.com/linux-syscall-support;protocol=https;branch=main;destsuffix=git/src/third_party/lss;name=lss \
            git://chromium.googlesource.com/external/gyp;protocol=https;destsuffix=git/src/tools/gyp;name=gyp \
-           file://0001-Replace-use-of-struct-ucontext-with-ucontext_t.patch \
            file://0001-include-sys-reg.h-to-get-__WORDSIZE-on-musl-libc.patch \
-           file://0002-Avoid-using-basename.patch \
            file://0003-Fix-conflict-between-musl-libc-dirent.h-and-lss.patch \
            file://0001-Turn-off-sign-compare-for-musl-libc.patch \
-           file://0002-sys-signal.h-is-a-nonportable-alias-for-signal.h.patch \
            file://0003-Dont-include-stab.h.patch \
            file://0004-elf_reader.cc-include-sys-reg.h-to-get-__WORDSIZE-on.patch \
-           file://0005-md2core-Replace-basename.patch \
-           file://0002-Use-_fpstate-instead-of-_libc_fpstate-on-linux.patch \
            file://mcontext.patch \
-           file://0001-disable-calls-to-getcontext-with-musl.patch \
+           file://0001-Remove-HAVE_GETCONTEXT-check-to-add-local-implementa.patch \
            file://0001-lss-Match-syscalls-to-match-musl.patch;patchdir=src/third_party/lss \
            file://mips_asm_sgidefs.patch;patchdir=src/third_party/lss \
+           file://0001-Do-not-add-stack-pointer-to-clobber-list.patch;patchdir=src/third_party/lss \
 "
 S = "${WORKDIR}/git"
 
 CXXFLAGS += "-D_GNU_SOURCE"
+LDFLAGS_append_libc-musl = " -lucontext"
 
-COMPATIBLE_MACHINE_powerpc = "(!.*ppc).*"
+COMPATIBLE_HOST_powerpc = "null"
+COMPATIBLE_HOST_powerpc64 = "null"
+COMPATIBLE_HOST_powerpc64le = "null"
+COMPATIBLE_HOST_riscv64 = "null"
+COMPATIBLE_HOST_riscv32 = "null"
 
 do_install_append() {
         install -d ${D}${includedir}
@@ -72,7 +76,7 @@ do_install_append() {
         install -m 0644 ${S}/src/client/linux/minidump_writer/minidump_writer.h ${D}${includedir}/breakpad/client/linux/minidump_writer/minidump_writer.h
 
         install -d ${D}${includedir}/breakpad/common
-        install -m 0644 ${S}/src/common/memory.h ${D}${includedir}/breakpad/common/memory.h
+        install -m 0644 ${S}/src/common/memory_allocator.h ${D}${includedir}/breakpad/common/memory_allocator.h
         install -m 0644 ${S}/src/common/scoped_ptr.h ${D}${includedir}/breakpad/common/scoped_ptr.h
         install -m 0644 ${S}/src/common/using_std_string.h ${D}${includedir}/breakpad/common/using_std_string.h
 
@@ -120,4 +124,7 @@ breakpad_populate_sysroot() {
 #| {standard input}:2184: Error: Thumb does not support this addressing mode -- `str r6,[r1,#-4]!'
 #| {standard input}:2191: Error: lo register required -- `ldr pc,[sp]'
 #| make: *** [src/client/linux/handler/exception_handler.o] Error 1
-ARM_INSTRUCTION_SET = "arm"
+ARM_INSTRUCTION_SET_armv5 = "arm"
+ARM_INSTRUCTION_SET_armv4 = "arm"
+
+TOOLCHAIN = "gcc"

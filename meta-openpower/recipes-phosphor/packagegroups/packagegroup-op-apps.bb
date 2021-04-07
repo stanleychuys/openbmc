@@ -2,7 +2,6 @@ SUMMARY = "OpenBMC for OpenPOWER - Applications"
 PR = "r1"
 
 inherit packagegroup
-inherit obmc-phosphor-utils
 
 PROVIDES = "${PACKAGES}"
 PACKAGES = " \
@@ -24,35 +23,29 @@ RPROVIDES_${PN}-system += "virtual-obmc-system-mgmt"
 
 SUMMARY_${PN}-chassis = "OpenPOWER Chassis"
 RDEPENDS_${PN}-chassis = " \
-        obmc-button-power \
-        obmc-button-reset \
-        obmc-control-chassis \
+        obmc-phosphor-buttons-signals \
+        obmc-phosphor-buttons-handler \
         obmc-op-control-power \
         obmc-host-failure-reboots \
         "
 #Pull in obmc-fsi on all P9 OpenPOWER systems
-RDEPENDS_${PN}-chassis += "${@mf_enabled(d, 'op-fsi', 'op-fsi')}"
+RDEPENDS_${PN}-chassis += "${@bb.utils.contains('MACHINE_FEATURES', 'op-fsi', 'op-fsi', '', d)}"
 
 #Pull in p9-cfam-override on all P9 OpenPOWER systems
-RDEPENDS_${PN}-chassis += "${@mf_enabled(d, 'p9-cfam-override', 'p9-cfam-override')}"
+RDEPENDS_${PN}-chassis += "${@bb.utils.contains('MACHINE_FEATURES', 'p9-cfam-override', 'p9-cfam-override', '', d)}"
 
 SUMMARY_${PN}-fans = "OpenPOWER Fans"
 RDEPENDS_${PN}-fans = " \
-        obmc-control-fan \
         "
 
 SUMMARY_${PN}-flash = "OpenPOWER Flash"
+
 RDEPENDS_${PN}-flash = " \
-        obmc-flash-bios \
-        obmc-mgr-download \
-        obmc-op-flasher \
-        "
-RDEPENDS_${PN}-flash_df-openpower-ubi-fs = " \
-        openpower-software-manager \
+        openpower-software-manager\
         "
 
 SUMMARY_${PN}-system = "OpenPOWER System"
 RDEPENDS_${PN}-system = " \
-        hostboot-settings \
         pdbg \
+        croserver \
         "

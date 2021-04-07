@@ -15,30 +15,26 @@ DEPENDS += "phosphor-logging"
 DEPENDS += "phosphor-dbus-interfaces"
 DEPENDS += "boost"
 DEPENDS += "nss-pam-ldapd"
+DEPENDS += "systemd"
 PACKAGE_BEFORE_PN = "phosphor-ldap"
-RDEPENDS_${PN} += "libsystemd"
-RDEPENDS_${PN} += "phosphor-logging"
 
 inherit useradd
 
 USERADD_PACKAGES = "${PN} phosphor-ldap"
 DBUS_PACKAGES = "${USERADD_PACKAGES}"
 # add groups needed for privilege maintenance
-GROUPADD_PARAM_${PN} = "priv-admin; priv-operator; priv-user; priv-callback "
-GROUPADD_PARAM_phosphor-ldap = "priv-admin; priv-operator; priv-user; priv-callback "
-
-# Add root user to priv-admin group
-GROUPMEMS_PARAM_${PN} = "-g priv-admin -a root"
+GROUPADD_PARAM_${PN} = "priv-admin; priv-operator; priv-user "
+GROUPADD_PARAM_phosphor-ldap = "priv-admin; priv-operator; priv-user "
 
 DBUS_SERVICE_${PN} += "xyz.openbmc_project.User.Manager.service"
 FILES_phosphor-ldap += " \
-        ${sbindir}/phosphor-ldap-conf \
-        ${sbindir}/phosphor-ldap-mapper \
+        ${bindir}/phosphor-ldap-conf \
+        ${bindir}/phosphor-ldap-mapper \
 "
 DBUS_SERVICE_phosphor-ldap = " \
         xyz.openbmc_project.Ldap.Config.service \
         xyz.openbmc_project.LDAP.PrivilegeMapper.service \
 "
 SRC_URI += "git://github.com/openbmc/phosphor-user-manager"
-SRCREV = "f5c2df5eef850900ece9aa8efeaa09ec083313c9"
+SRCREV = "9638afb9aa848aa0e696c2447e0fbc70a0aa5eed"
 S = "${WORKDIR}/git"

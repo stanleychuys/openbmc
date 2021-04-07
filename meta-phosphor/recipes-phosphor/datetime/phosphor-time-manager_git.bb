@@ -5,25 +5,22 @@ PR = "r1"
 
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=e3fc50a88d0a364313df4b21ef20c29e"
-inherit autotools pkgconfig pythonnative
+inherit autotools pkgconfig python3native
 inherit obmc-phosphor-dbus-service
 
 DEPENDS += "autoconf-archive-native"
 DEPENDS += "phosphor-mapper"
 DEPENDS += "systemd"
 DEPENDS += "sdbusplus"
-DEPENDS += "sdbusplus-native"
+DEPENDS += "${PYTHON_PN}-sdbus++-native"
 DEPENDS += "phosphor-logging"
 DEPENDS += "phosphor-dbus-interfaces"
-RDEPENDS_${PN} += "${VIRTUAL-RUNTIME_obmc-settings-mgmt}"
-RDEPENDS_${PN} += "network"
-RDEPENDS_${PN} += "libmapper"
-RDEPENDS_${PN} += "libsystemd"
-RDEPENDS_${PN} += "sdbusplus"
-RDEPENDS_${PN} += "phosphor-dbus-interfaces"
+RDEPENDS_${PN} += "phosphor-settings-manager"
+RDEPENDS_${PN} += "phosphor-network"
+RDEPENDS_${PN} += "phosphor-mapper"
 
 SRC_URI += "git://github.com/openbmc/phosphor-time-manager"
-SRCREV = "4e84539349dac086ce2a58e5b9900ed4e40a2eaf"
+SRCREV = "8af2a8940992c00417cf6629997c528f2500efbf"
 PV = "1.0+git${SRCPV}"
 S = "${WORKDIR}/git"
 

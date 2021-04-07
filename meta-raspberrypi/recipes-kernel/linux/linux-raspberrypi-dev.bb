@@ -5,17 +5,24 @@ python __anonymous() {
         raise bb.parse.SkipRecipe(msg)
 }
 
-FILESEXTRAPATHS_prepend := "${THISDIR}/linux-raspberrypi:"
+LINUX_VERSION ?= "5.10.y"
+LINUX_RPI_BRANCH ?= "rpi-5.10.y"
 
-LINUX_VERSION ?= "4.16"
-LINUX_RPI_DEV_BRANCH ?= "rpi-4.16.y"
+SRCREV_machine = "${AUTOREV}"
+SRCREV_meta = "${AUTOREV}"
 
-SRCREV = "${AUTOREV}"
+KMETA = "kernel-meta"
+
 SRC_URI = " \
-    git://github.com/raspberrypi/linux.git;protocol=git;branch=${LINUX_RPI_DEV_BRANCH} \
-    file://0001-menuconfig-check-lxdiaglog.sh-Allow-specification-of.patch \
+    git://github.com/raspberrypi/linux.git;name=machine;protocol=git;branch=${LINUX_RPI_BRANCH} \
+    git://git.yoctoproject.org/yocto-kernel-cache;type=kmeta;name=meta;branch=master;destsuffix=${KMETA} \
+    file://powersave.cfg \
+    file://android-drivers.cfg \
     "
+
 require linux-raspberrypi.inc
+
+KERNEL_DTC_FLAGS += "-@ -H epapr"
 
 # Disable version check so that we don't have to edit this recipe every time
 # upstream bumps the version
