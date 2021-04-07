@@ -1,6 +1,6 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
-SRC_URI += "file://0001-add-sensor-log.patch"
+#SRC_URI += "file://0001-add-sensor-log.patch"
 
 NAMES = " \
         i2c@82000/tmp100@48 \

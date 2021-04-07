@@ -23,7 +23,6 @@ RPROVIDES_${PN}-system += "virtual-obmc-system-mgmt"
 
 SUMMARY_${PN}-chassis = "evb-npcm750 Chassis"
 RDEPENDS_${PN}-chassis = " \
-        obmc-control-chassis \
         obmc-op-control-power \
         "
 SUMMARY_${PN}-fans = "evb-npcm750 Fans"
@@ -32,21 +31,18 @@ RDEPENDS_${PN}-fans = " \
 
 SUMMARY_${PN}-flash = "evb-npcm750 Flash"
 RDEPENDS_${PN}-flash = " \
-        obmc-flash-bmc \
-        obmc-mgr-download \
-        obmc-control-bmc \
         "
 
 SUMMARY_${PN}-system = "evb-npcm750 System"
 RDEPENDS_${PN}-system = " \
-        obmc-mgr-system \
         phosphor-webui \
         obmc-ikvm \
-		phosphor-image-signing \
-		openssl-bin \
-		bmcweb \
-		phosphor-host-postd \
-		phosphor-ipmi-ipmb \
-		iperf3 \
-		loadsvf \
+	phosphor-image-signing \
+	openssl-bin \
+	bmcweb \
+	phosphor-host-postd \
+	phosphor-ipmi-ipmb \
+	iperf3 \
+	loadsvf \
+        ipmitool \
         "
