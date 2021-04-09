@@ -1,5 +1,7 @@
 FILESEXTRAPATHS_prepend_olympus-nuvoton := "${THISDIR}/${PN}:"
 
+SRCREV = "92caa4c639903ef076e2f09e985291781edd927d"
+
 SRC_URI_append_olympus-nuvoton = " file://power-config-host0.json"
 SRC_URI_append_olympus-nuvoton = " file://0001-support-host-boot-progress.patch"
 SRC_URI_append_olympus-nuvoton = " file://0002-add-support-chassis-on-off-target-files.patch"
