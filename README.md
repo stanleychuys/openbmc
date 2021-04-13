@@ -35,32 +35,48 @@ git checkout -b runbmc origin/runbmc
 ```
 
 ### 3) Target your hardware
-Any build requires an environment variable known as `TEMPLATECONF` to be set
-to a hardware target.
-You can see all of the known targets with
-`find meta-* -name local.conf.sample`. Choose the hardware target and
-then move to the next step. Additional examples can be found in the
-[OpenBMC Cheatsheet](https://github.com/openbmc/docs/blob/master/cheatsheet.md)
+Any build requires an environment set up according to your hardware target.
+There is a special script in the root of this repository that can be used
+to configure the environment as needed. The script is called `setup` and
+takes the name of your hardware target as an argument.
 
-Machine | TEMPLATECONF
---------|---------
-Olympus Nuvoton | ```meta-quanta/meta-olympus-nuvoton/conf```
-BUV RunBMC | ```meta-evb/meta-evb-nuvoton/meta-buv-runbmc/conf```
+The script needs to be sourced while in the top directory of the OpenBMC
+repository clone, and, if run without arguments, will display the list
+of supported hardware targets, see the following example:
+
+```
+$ . setup <machine> [build_dir]
+Target machine must be specified. Use one of:
+
+buv-runbmc              lanyang                 romulus
+centriq2400-rep         mihawk                  s2600wf
+dl360poc                msn                     stardragon4800-rep2
+ethanolx                neptune                 swift
+evb-zx3-pm3             nicole                  tiogapass
+f0b                     olympus                 vesnin
+fp5280g2                olympus-nuvoton         witherspoon
+g220a                   on5263m5                witherspoon-tacoma
+gbs                     palmetto                yosemitev2
+gsj                     qemuarm                 zaius
+hr630                   quanta-q71l
+hr855xg2                rainier
+```
+
+Once you know the target, source the `setup` script as follows:
 
 As an example target Olympus Nuvoton
 ```
-export TEMPLATECONF=meta-quanta/meta-olympus-nuvoton/conf
+. setup olympus-nuvoton
 ```
 
 As an example target BUV RunBMC
 ```
-export TEMPLATECONF=meta-evb/meta-evb-nuvoton/meta-buv-runbmc/conf
+. setup buv-runbmc
 ```
 
 ### 4) Build
 
 ```
-. openbmc-env
 bitbake obmc-phosphor-image
 ```
 
