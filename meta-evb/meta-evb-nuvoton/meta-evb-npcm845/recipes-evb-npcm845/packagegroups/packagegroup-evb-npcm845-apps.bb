@@ -1,0 +1,47 @@
+SUMMARY = "OpenBMC for EVB NPCM845 system - Applications"
+PR = "r1"
+
+inherit packagegroup
+
+PROVIDES = "${PACKAGES}"
+PACKAGES = " \
+        ${PN}-chassis \
+        ${PN}-fans \
+        ${PN}-flash \
+        ${PN}-system \
+        "
+
+PROVIDES += "virtual/obmc-chassis-mgmt"
+PROVIDES += "virtual/obmc-fan-mgmt"
+PROVIDES += "virtual/obmc-flash-mgmt"
+PROVIDES += "virtual/obmc-system-mgmt"
+
+RPROVIDES_${PN}-chassis += "virtual-obmc-chassis-mgmt"
+RPROVIDES_${PN}-fans += "virtual-obmc-fan-mgmt"
+RPROVIDES_${PN}-flash += "virtual-obmc-flash-mgmt"
+RPROVIDES_${PN}-system += "virtual-obmc-system-mgmt"
+
+SUMMARY_${PN}-chassis = "EVB NPCM845 Chassis"
+RDEPENDS_${PN}-chassis = " \
+        "
+
+SUMMARY_${PN}-fans = "EVB NPCM845 Fans"
+RDEPENDS_${PN}-fans = " \
+        "
+
+SUMMARY_${PN}-flash = "EVB NPCM845 Flash"
+RDEPENDS_${PN}-flash = " \
+        "
+
+SUMMARY_${PN}-system = "EVB NPCM845 System"
+RDEPENDS_${PN}-system = " \
+        phosphor-webui \
+        obmc-ikvm \
+        iperf3 \
+        usb-emmc-storage \
+        usb-network \
+        nmon \
+        memtester \
+        htop \
+        ipmitool \
+        "
