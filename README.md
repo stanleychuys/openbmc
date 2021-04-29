@@ -48,18 +48,10 @@ of supported hardware targets, see the following example:
 $ . setup <machine> [build_dir]
 Target machine must be specified. Use one of:
 
-buv-runbmc              lanyang                 romulus
-centriq2400-rep         mihawk                  s2600wf
-dl360poc                msn                     stardragon4800-rep2
-ethanolx                neptune                 swift
-evb-zx3-pm3             nicole                  tiogapass
-f0b                     olympus                 vesnin
-fp5280g2                olympus-nuvoton         witherspoon
-g220a                   on5263m5                witherspoon-tacoma
-gbs                     palmetto                yosemitev2
-gsj                     qemuarm                 zaius
-hr630                   quanta-q71l
-hr855xg2                rainier
+buv-runbmc
+evb-npcm845
+olympus-nuvoton
+
 ```
 
 Once you know the target, source the `setup` script as follows:
@@ -72,6 +64,10 @@ As an example target Olympus Nuvoton
 As an example target BUV RunBMC
 ```
 . setup buv-runbmc
+```
+As an example target EVB NPCM845
+```
+. setup evb-npcm845
 ```
 
 ### 4) Build
@@ -131,11 +127,15 @@ In order to get a password for the ftp please contact BMC_Marketing@Nuvoton.com
 
 #### 9) Enabled features
 Olympus RunBMC Platform
-[https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton)
+[https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.10/meta-quanta/meta-olympus-nuvoton](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.10/meta-quanta/meta-olympus-nuvoton)
 
 
 BUV RunBMC Platform
-[https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-evb/meta-evb-nuvoton/meta-buv-runbmc](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-evb/meta-evb-nuvoton/meta-buv-runbmc)
+[https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.10/meta-evb/meta-evb-nuvoton/meta-buv-runbmc](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.10/meta-evb/meta-evb-nuvoton/meta-buv-runbmc)
+
+EVB NPCM845
+[https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.10/meta-evb/meta-evb-nuvoton/meta-evb-npcm845](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.10/meta-evb/meta-evb-nuvoton/meta-evb-npcm845)
+
 
 ## Contact
 - Mail: tomer.maimon@nuvoton.com,  avi.fishman@nuvoton.com or BMC_Marketing@Nuvoton.com
