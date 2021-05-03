@@ -223,7 +223,4 @@ main() {
     fi
 }
 
-# Exit without running main() if sourced
-return 0 2>/dev/null
-
 main "$@"
