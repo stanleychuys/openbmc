@@ -44,4 +44,6 @@ RDEPENDS_${PN}-system = " \
         memtester \
         htop \
         ipmitool \
+        openssl-bin \
+        phosphor-host-postd \
         "
