@@ -1,0 +1,66 @@
+From 648d4f15d64e0c54f153dd0da59f6592d2c6bc26 Mon Sep 17 00:00:00 2001
+From: Stanley Chu <yschu@nuvoton.com>
+Date: Tue, 11 May 2021 16:18:19 +0800
+Subject: [PATCH] support SGMII on EVB rev A
+
+Signed-off-by: Stanley Chu <yschu@nuvoton.com>
+---
+ .../boot/dts/nuvoton/nuvoton-npcm845-evb.dts      |  5 +++++
+ .../dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi   | 15 +++++++++++++++
+ 2 files changed, 20 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
+
+diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts
+index e382c7eeb76d..82d325caead5 100644
+--- a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts
++++ b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts
+@@ -4,6 +4,7 @@
+ 
+ /dts-v1/;
+ #include "nuvoton-npcm845.dtsi"
++#include "nuvoton-npcm845-pincfg-evb.dtsi"
+ #include <dt-bindings/thermal/thermal.h>
+ 
+ / {
+@@ -89,6 +90,8 @@
+ 		gmac0: eth@f0802000 {
+ 			phy-mode = "rgmii-id";
+ 			snps,eee-force-disable;
++			gpios = <&gpio2 14 GPIO_ACTIVE_HIGH>,
++					<&gpio2 15 GPIO_ACTIVE_HIGH>;
+ 			status = "okay";
+ 		};
+ 
+@@ -453,6 +456,8 @@
+ 		pinctrl-0 = <	&iox1_pins
+ 				&jtag2_pins
+ 				&lpc_pins
++				&pin108_slew
++				&pin109_slew
+ 				&spix_pins>;
+ 	};
+ };
+diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
+new file mode 100644
+index 000000000000..0b12aeb44b16
+--- /dev/null
++++ b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
+@@ -0,0 +1,15 @@
++// SPDX-License-Identifier: GPL-2.0
++// Copyright (c) 2018 Nuvoton Technology
++
++/ {
++	pinctrl: pinctrl@f0800000 {
++		pin108_slew: pin108-slew {
++			pins = "GPIO108/SG1_MDC";
++			slew-rate = <1>;
++		};
++		pin109_slew: pin109-slew {
++			pins = "GPIO109/SG1_MDIO";
++			slew-rate = <1>;
++		};
++	};
++};
+-- 
+2.17.1
+
