@@ -49,7 +49,7 @@ PECIITEMS = "${@compose_list(d, 'PECIITEMSFMT', 'PECINAMES')}"
 PECIENVS = "obmc/hwmon/{0}"
 SYSTEMD_ENVIRONMENT_FILE_${PN}_append_olympus-nuvoton = " ${@compose_list(d, 'PECIENVS', 'PECIITEMS')}"
 
-EXTRA_OECONF_append_olympus-nuvoton  = " --enable-update-functional-on-fail"
+EXTRA_OEMESON_append_olympus-nuvoton  = " -Dupdate-functional-on-fail=true"
 
 SENSOR_ON_TMPL = "olympus-reload-sensor-on.service"
 CHASSIS_POWERON_TGTFMT = "obmc-chassis-poweron.target"
