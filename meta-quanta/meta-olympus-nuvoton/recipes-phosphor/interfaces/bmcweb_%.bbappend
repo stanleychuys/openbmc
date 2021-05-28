@@ -1,14 +1,15 @@
 FILESEXTRAPATHS_prepend_olympus-nuvoton := "${THISDIR}/${PN}:"
 
+SRCREV := "b623d9c1b6605978eb6158619bb43c79a9f543fd"
+
 SRC_URI_append_olympus-nuvoton = " file://0003-Redfish-Add-power-metrics-support.patch"
 SRC_URI_append_olympus-nuvoton = " file://0005-bmcweb-chassis-add-indicatorLED-support.patch"
 SRC_URI_append_olympus-nuvoton = " file://0014-add-config-to-config-virtual-media-buffer-size.patch"
-SRC_URI_append_olympus-nuvoton = " file://0015-redfish-log-service-corrects-odata-id-of-bmc-journal.patch"
 SRC_URI_append_olympus-nuvoton = " file://0016-manager-do-not-update-value-if-string-is-empty.patch"
 
 # Enable CPU Log and Raw PECI support
-EXTRA_OEMESON_append = " -Dredfish-cpu-log=enabled"
-EXTRA_OEMESON_append = " -Dredfish-raw-peci=enabled"
+#EXTRA_OEMESON_append = " -Dredfish-cpu-log=enabled"
+#EXTRA_OEMESON_append = " -Dredfish-raw-peci=enabled"
 
 # Enable Redfish BMC Journal support
 EXTRA_OEMESON_append = " -Dredfish-bmc-journal=enabled"
