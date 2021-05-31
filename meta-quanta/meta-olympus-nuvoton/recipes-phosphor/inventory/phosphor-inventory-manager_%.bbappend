@@ -2,7 +2,7 @@ FILESEXTRAPATHS_prepend_olympus-nuvoton := "${THISDIR}/${PN}:"
 PACKAGECONFIG_append_olympus-nuvoton = " associations"
 
 SRC_URI_append_olympus-nuvoton = " file://associations.json"
-SRC_URI_append_olympus-nuvoton = " file://0001-support-type-uint32-uint16-uint8-for-smbios.patch"
+#SRC_URI_append_olympus-nuvoton = " file://0001-support-type-uint32-uint16-uint8-for-smbios.patch"
 
 
 DEPENDS_append_olympus-nuvoton = " olympus-nuvoton-inventory-cleanup"

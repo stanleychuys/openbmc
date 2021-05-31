@@ -1,4 +1,4 @@
-From 77df2e87653c1cd1f81c9eb17fff16d31361f814 Mon Sep 17 00:00:00 2001
+From 114c2309711cf91df05b951ff1cca8d09fa77c7e Mon Sep 17 00:00:00 2001
 From: Tim Lee <timlee660101@gmail.com>
 Date: Thu, 21 Jan 2021 14:42:20 +0800
 Subject: [PATCH] Notify inventory manager that a interface needs added
@@ -84,12 +84,12 @@ index 5c8ca86..e53d9d4 100644
  
  } // namespace smbios
 diff --git a/include/dimm.hpp b/include/dimm.hpp
-index 7d69a29..107b67e 100644
+index 4230ae4..2b48c62 100644
 --- a/include/dimm.hpp
 +++ b/include/dimm.hpp
-@@ -20,15 +20,43 @@
- #include <xyz/openbmc_project/Inventory/Decorator/Asset/server.hpp>
+@@ -21,15 +21,43 @@
  #include <xyz/openbmc_project/Inventory/Item/Dimm/server.hpp>
+ #include <xyz/openbmc_project/Inventory/Item/server.hpp>
  
 +#include <sdbusplus/asio/object_server.hpp>
 +#include <sdbusplus/server.hpp>
@@ -131,7 +131,7 @@ index 7d69a29..107b67e 100644
  class Dimm :
      sdbusplus::server::object::object<
          sdbusplus::xyz::openbmc_project::Inventory::Item::server::Dimm>,
-@@ -55,6 +83,27 @@ class Dimm :
+@@ -61,6 +89,27 @@ class Dimm :
          dimmNum(dimmId), storage(smbiosTableStorage)
      {
          memoryInfoUpdate();
@@ -159,7 +159,7 @@ index 7d69a29..107b67e 100644
      }
  
      void memoryInfoUpdate(void);
-@@ -88,6 +137,15 @@ class Dimm :
+@@ -95,6 +144,15 @@ class Dimm :
                         uint8_t* dataIn);
      void dimmPartNum(const uint8_t positionNum, const uint8_t structLen,
                       uint8_t* dataIn);
@@ -258,7 +258,7 @@ index 90c1191..4baa525 100644
  
  } // namespace smbios
 diff --git a/src/dimm.cpp b/src/dimm.cpp
-index 71123d2..cc2c84f 100644
+index e2cfbc6..2097818 100644
 --- a/src/dimm.cpp
 +++ b/src/dimm.cpp
 @@ -54,6 +54,7 @@ void Dimm::memoryInfoUpdate(void)
@@ -295,7 +295,7 @@ index 71123d2..cc2c84f 100644
 +    property.emplace(std::move("MemorySizeInKB"), static_cast<uint32_t>(result));
  }
  
- void Dimm::dimmSizeExt(uint32_t size)
+ void Dimm::dimmSizeExt(size_t size)
  {
      size = size * dimmSizeUnit;
      memorySizeInKB(size);
@@ -303,7 +303,7 @@ index 71123d2..cc2c84f 100644
 +    property.emplace(std::move("MemorySizeInKB"), static_cast<uint32_t>(size));
  }
  
- uint32_t Dimm::memorySizeInKB(uint32_t value)
+ size_t Dimm::memorySizeInKB(size_t value)
 @@ -113,6 +123,8 @@ void Dimm::dimmDeviceLocator(const uint8_t positionNum, const uint8_t structLen,
      std::string result = positionToString(positionNum, structLen, dataIn);
  
@@ -343,16 +343,16 @@ index 71123d2..cc2c84f 100644
  }
  
  std::string Dimm::memoryTypeDetail(std::string value)
-@@ -172,6 +192,8 @@ void Dimm::dimmManufacturer(const uint8_t positionNum, const uint8_t structLen,
-     std::string result = positionToString(positionNum, structLen, dataIn);
- 
+@@ -183,6 +203,8 @@ void Dimm::dimmManufacturer(const uint8_t positionNum, const uint8_t structLen,
+     }
      manufacturer(result);
+     present(val);
 +
 +    assertprop.emplace(std::move("Manufacturer"), std::move(result));
  }
  
  std::string Dimm::manufacturer(std::string value)
-@@ -186,6 +208,8 @@ void Dimm::dimmSerialNum(const uint8_t positionNum, const uint8_t structLen,
+@@ -203,6 +225,8 @@ void Dimm::dimmSerialNum(const uint8_t positionNum, const uint8_t structLen,
      std::string result = positionToString(positionNum, structLen, dataIn);
  
      serialNumber(result);
@@ -361,7 +361,7 @@ index 71123d2..cc2c84f 100644
  }
  
  std::string Dimm::serialNumber(std::string value)
-@@ -200,6 +224,8 @@ void Dimm::dimmPartNum(const uint8_t positionNum, const uint8_t structLen,
+@@ -217,6 +241,8 @@ void Dimm::dimmPartNum(const uint8_t positionNum, const uint8_t structLen,
      std::string result = positionToString(positionNum, structLen, dataIn);
  
      partNumber(result);

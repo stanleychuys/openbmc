@@ -2,7 +2,7 @@ FILESEXTRAPATHS_prepend_olympus-nuvoton := "${THISDIR}/${PN}:"
 
 SRC_URI_append_olympus-nuvoton = " file://xyz.openbmc_project.Hwmon_hostoff@.service"
 SRC_URI_append_olympus-nuvoton = " file://olympus-reload-sensor.sh"
-SRC_URI_append_olympus-nuvoton = " file://0001-lev-add-poweron-monitor-feature.patch"
+#SRC_URI_append_olympus-nuvoton = " file://0001-lev-add-poweron-monitor-feature.patch"
 SRC_URI_append_olympus-nuvoton = " file://olympus-reload-sensor-on.service"
 SRC_URI_append_olympus-nuvoton = " file://olympus-reload-sensor-off.service"
 

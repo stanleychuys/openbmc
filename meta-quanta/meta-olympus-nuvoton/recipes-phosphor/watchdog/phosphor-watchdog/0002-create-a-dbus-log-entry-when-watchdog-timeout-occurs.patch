@@ -1,17 +1,17 @@
-From 93231767e76b3107963ab29954e9bc491289b883 Mon Sep 17 00:00:00 2001
+From bc1006f67e32ecf832ca68f5d02d3e7ef262a54a Mon Sep 17 00:00:00 2001
 From: Stanley Chu <yschu@nuvoton.com>
 Date: Tue, 26 Jan 2021 14:52:03 +0800
 Subject: [PATCH] create a dbus log entry when watchdog timeout occurs.
 
 Signed-off-by: Stanley Chu <yschu@nuvoton.com>
 ---
- watchdog.cpp | 8 ++++++++
+ src/watchdog.cpp | 8 ++++++++
  1 file changed, 8 insertions(+)
 
-diff --git a/watchdog.cpp b/watchdog.cpp
+diff --git a/src/watchdog.cpp b/src/watchdog.cpp
 index 3b5356f..69145dd 100644
---- a/watchdog.cpp
-+++ b/watchdog.cpp
+--- a/src/watchdog.cpp
++++ b/src/watchdog.cpp
 @@ -9,6 +9,8 @@
  #include <sdbusplus/exception.hpp>
  #include <xyz/openbmc_project/Common/error.hpp>

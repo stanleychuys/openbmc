@@ -2,7 +2,7 @@ SUMMARY = "SMBIOS MDR version 2 service for Intel based platform"
 DESCRIPTION = "SMBIOS MDR version 2 service for Intel based platfrom"
 
 SRC_URI = "git://github.com/openbmc/smbios-mdr"
-SRCREV = "26de0d73700eef983af4733d258314b7c39bd7ac"
+SRCREV = "d23b84a7eb2be944b12e6539cf627f595b299fda"
 
 SRC_URI += "file://0001-Notify-inventory-manager-that-a-interface-needs-adde.patch"
 SRC_URI += "file://smbios2"
@@ -17,7 +17,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://${S}/LICENSE;md5=e3fc50a88d0a364313df4b21ef20c29e"
 
 inherit cmake pkgconfig
-inherit systemd
+inherit obmc-phosphor-systemd
 
 SYSTEMD_SERVICE_${PN} += "smbios-mdrv2.service"
 SYSTEMD_SERVICE_${PN} += "xyz.openbmc_project.cpuinfo.service"
@@ -31,6 +31,7 @@ DEPENDS += " \
     phosphor-logging \
     libpeci \
     i2c-tools \
+    phosphor-ipmi-blobs \
     "
 do_install_append() {
     install -d ${D}${localstatedir_nativesdk}/${base_libdir_nativesdk}/smbios
@@ -40,3 +41,7 @@ do_install_append() {
 }
 
 EXTRA_OECMAKE = "-DYOCTO=1"
+EXTRA_OECMAKE += "-DIPMI_BLOB=OFF"
+
+PACKAGECONFIG ??= "${@bb.utils.filter('DISTRO_FEATURES', 'smbios-no-dimm', d)}"
+PACKAGECONFIG[smbios-no-dimm] = "-DDIMM_DBUS=OFF, -DDIMM_DBUS=ON"
