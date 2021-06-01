@@ -1,6 +1,6 @@
 FILESEXTRAPATHS_prepend_olympus-nuvoton := "${THISDIR}/${PN}:"
 
-SRCREV := "b623d9c1b6605978eb6158619bb43c79a9f543fd"
+SRCREV := "2ebb9683287cf6b1a2f2cc3c077bd99aceefa8dd"
 
 SRC_URI_append_olympus-nuvoton = " file://0003-Redfish-Add-power-metrics-support.patch"
 SRC_URI_append_olympus-nuvoton = " file://0005-bmcweb-chassis-add-indicatorLED-support.patch"
