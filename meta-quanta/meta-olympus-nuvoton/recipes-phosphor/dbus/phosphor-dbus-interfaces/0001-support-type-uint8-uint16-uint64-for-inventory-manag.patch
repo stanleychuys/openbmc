@@ -1,7 +1,7 @@
 From c3fcf037083e0357c6b7bd8490b12bca7fff02dc Mon Sep 17 00:00:00 2001
 From: Joseph Liu <kwliu@nuvoton.com>
 Date: Fri, 31 Jul 2020 17:39:53 +0800
-Subject: [PATCH] support type uint8 uint16 uint32 for inventory manager
+Subject: [PATCH] support type uint8 uint16 uint64 for inventory manager
 
 ---
  xyz/openbmc_project/Inventory/Manager.interface.yaml | 2 +-
@@ -16,9 +16,8 @@ index 90534ac..557b63a 100644
        parameters:
          - name: object
 -          type: dict[path,dict[string,dict[string,variant[boolean,size,int64,string,array[byte]]]]]
-+          type: dict[path,dict[string,dict[string,variant[boolean,size,int64,string,uint32,uint16,byte,array[byte]]]]]
++          type: dict[path,dict[string,dict[string,variant[boolean,size,int64,string,uint64,uint16,byte,array[byte]]]]]
            description: >
                A dictionary of fully enumerated items to be managed.
 -- 
 2.25.1
-
