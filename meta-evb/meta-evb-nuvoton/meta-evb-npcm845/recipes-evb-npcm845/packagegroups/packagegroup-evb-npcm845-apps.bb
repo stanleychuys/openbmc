@@ -49,4 +49,5 @@ RDEPENDS_${PN}-system = " \
         phosphor-ipmi-fru \
         phosphor-sel-logger \
         rsyslog \
+        loadsvf \
         "
