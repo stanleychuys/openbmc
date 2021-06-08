@@ -1,6 +1,6 @@
-From f8bcbdff49999e8aa714087e27f62317e63acad1 Mon Sep 17 00:00:00 2001
+From 1b5e6414a1bfeec29cc4b5db88aefd27fa891e7e Mon Sep 17 00:00:00 2001
 From: Joseph Liu <kwliu@nuvoton.com>
-Date: Tue, 18 Feb 2020 15:42:31 +0800
+Date: Tue, 8 Jun 2021 12:12:30 +0800
 Subject: [PATCH] driver: misc: add nuvoton vdmx/vdma driver
 
 Signed-off-by: Joseph Liu <kwliu@nuvoton.com>
@@ -9,15 +9,15 @@ Signed-off-by: Joseph Liu <kwliu@nuvoton.com>
  drivers/misc/Kconfig                          |   7 +
  drivers/misc/Makefile                         |   1 +
  drivers/misc/npcm-vdm/Kconfig                 |   2 +-
- drivers/misc/npcm7xx-pci-vdm.c                | 738 ++++++++++++++++++
- 5 files changed, 752 insertions(+), 1 deletion(-)
+ drivers/misc/npcm7xx-pci-vdm.c                | 760 ++++++++++++++++++
+ 5 files changed, 774 insertions(+), 1 deletion(-)
  create mode 100644 drivers/misc/npcm7xx-pci-vdm.c
 
 diff --git a/arch/arm/boot/dts/nuvoton-npcm750-runbmc-olympus.dts b/arch/arm/boot/dts/nuvoton-npcm750-runbmc-olympus.dts
-index 0fed3a642eca..fcbbd92eca4c 100644
+index e08f8fb13792..693e6d311995 100644
 --- a/arch/arm/boot/dts/nuvoton-npcm750-runbmc-olympus.dts
 +++ b/arch/arm/boot/dts/nuvoton-npcm750-runbmc-olympus.dts
-@@ -28,6 +28,7 @@
+@@ -31,6 +31,7 @@
  		udc8 = &udc8;
  		udc9 = &udc9;
  		emmc0 = &sdhci0;
@@ -25,55 +25,52 @@ index 0fed3a642eca..fcbbd92eca4c 100644
  		i2c0 = &i2c0;
  		i2c1 = &i2c1;
  		i2c2 = &i2c2;
-@@ -258,6 +259,10 @@
- 			status = "okay";
- 		};
+@@ -976,6 +977,10 @@
+ 	status = "okay";
+ };
  
-+		vdma: vdma@e0800000 {
-+			status = "okay";
-+		};
++&vdma {
++	status = "okay";
++};
 +
- 		pcimbox: pcimbox@f0848000 {
- 			status = "okay";
- 		};
+ &vcd {
+ 	status = "okay";
+ 	memory-region = <&vcd_memory>;
 diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
-index a7f7d6bd7ed5..f4fb461d39c4 100644
+index 82f10fd5c0ab..4a6b6fe9c11e 100644
 --- a/drivers/misc/Kconfig
 +++ b/drivers/misc/Kconfig
-@@ -493,6 +493,13 @@ config NPCM7XX_MCU_FLASH
+@@ -506,6 +506,13 @@ config NPCM8XX_JTAG_MASTER
  	help
- 	  Control GPIO to transmit SPI signals to support MCU firmware flash function.
+ 	  NPCM8xx JTAG Master Interfaces.
  
 +config NPCM7XX_PCI_VDM
 +	tristate "NPCM7xx PCI VDM/VDMA Controller"
-+	depends on (ARCH_NPCM7XX || COMPILE_TEST) && REGMAP && MFD_SYSCON
++	depends on (ARCH_NPCM || COMPILE_TEST) && REGMAP && MFD_SYSCON
 +	help
-+	  Expose the NPCM750/730/715/705 PCI VDM/VDMA registers found on
++	  Expose the NPCM8xx/7xx PCI VDM/VDMA registers found on
 +	  Nuvoton SOCs to userspace.
 +
  source "drivers/misc/c2port/Kconfig"
  source "drivers/misc/eeprom/Kconfig"
  source "drivers/misc/cb710/Kconfig"
 diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
-index c5bba1c11df8..7fd7f61444cf 100644
+index 1079cd2f62d4..8ce25e00d01f 100644
 --- a/drivers/misc/Makefile
 +++ b/drivers/misc/Makefile
-@@ -59,6 +59,7 @@ obj-$(CONFIG_HABANA_AI)		+= habanalabs/
- obj-$(CONFIG_XILINX_SDFEC)	+= xilinx_sdfec.o
- obj-$(CONFIG_NPCM7XX_LPC_BPC)	+= npcm7xx-lpc-bpc.o
- obj-$(CONFIG_NPCM7XX_PCI_MBOX)	+= npcm7xx-pci-mbox.o
+@@ -64,3 +64,4 @@ obj-$(CONFIG_NPCM7XX_JTAG_MASTER)	+= npcm7xx-jtag-master.o
+ obj-$(CONFIG_NPCM8XX_JTAG_MASTER)	+= npcm8xx-jtag-master.o
+ obj-$(CONFIG_MCTP_LPC)		+= mctp-lpc.o
+ obj-$(CONFIG_NPCM7XX_MCU_FLASH) += npcm7xx-mcu-flash.o
 +obj-$(CONFIG_NPCM7XX_PCI_VDM)  += npcm7xx-pci-vdm.o
- obj-$(CONFIG_NPCM_VDM)		+= npcm-vdm/
- obj-$(CONFIG_NPCM7XX_JTAG_MASTER)	+= npcm7xx-jtag-master.o
- obj-$(CONFIG_NPCM7XX_MCU_FLASH)		+= npcm7xx-mcu-flash.o
 diff --git a/drivers/misc/npcm-vdm/Kconfig b/drivers/misc/npcm-vdm/Kconfig
-index a2c3845acc37..bf6fe99a9502 100644
+index 3cb4b173f835..e53c4be3bd58 100644
 --- a/drivers/misc/npcm-vdm/Kconfig
 +++ b/drivers/misc/npcm-vdm/Kconfig
 @@ -6,7 +6,7 @@ menu "Nuvoton Miscellaneous optional drivers"
  config NPCM_VDM
  	tristate "support npcmx50 VDM on PCIe"
- 	depends on ARCH_NPCM7XX
+ 	depends on ARCH_NPCM
 -	default y
 +	default n
  	help
@@ -81,10 +78,10 @@ index a2c3845acc37..bf6fe99a9502 100644
  
 diff --git a/drivers/misc/npcm7xx-pci-vdm.c b/drivers/misc/npcm7xx-pci-vdm.c
 new file mode 100644
-index 000000000000..48dd099d59d5
+index 000000000000..c27f2b695a94
 --- /dev/null
 +++ b/drivers/misc/npcm7xx-pci-vdm.c
-@@ -0,0 +1,738 @@
+@@ -0,0 +1,760 @@
 +// SPDX-License-Identifier: GPL-2.0
 +// Copyright (c) 2014-2018 Nuvoton Technology corporation.
 +
@@ -111,38 +108,57 @@ index 000000000000..48dd099d59d5
 +#define DEVICE_NAME	"vdm"
 +#define TX_TIMEOUT			100
 +
++#ifdef CONFIG_ARCH_NPCM7XX
 +/* GCR  Register */
 +#define MFSEL3 0x64
 +#define  MFSEL3_PCIE_PUSE BIT(17)
 +#define INTCR3 0x9C
 +#define  INTCR3_PCIRREL BIT(30)
++#endif
 +
 +/* VDM  Register */
 +#define VDMX_BA 0xE0800000
 +#define VDMX_STATR 0x0000
-+#define  VDMX_STATR_RXNDW   GENMASK(23, 16)
-+#define  VDMX_STATR_RXNDW_OFFSET    16
-+#define  VDMX_STATR_RXDR BIT(2)
-+#define  VDMX_STATR_RXF BIT(1)
-+#define  VDMX_STATR_TXS BIT(0)
++
++#ifdef CONFIG_ARCH_NPCM7XX
 +#define VDMX_IEN 0x0004
-+#define  VDMX_IEN_RXDREN BIT(2)
-+#define  VDMX_IEN_RXFEN BIT(1)
-+#define  VDMX_IEN_TXSEN BIT(0)
 +#define VDMX_RXF 0x0008
 +#define VDMX_TXF 0x000C
 +#define VDMX_CNT 0x0010
-+#define  VDMX_CNT_RXTO_05US BIT(4)
-+#define  VDMX_CNT_RXTO_1US  BIT(5)
-+#define  VDMX_CNT_RXTO_2US  (BIT(5) | BIT(4))
-+#define  VDMX_CNT_RXTO_4US  BIT(6)
-+#define  VDMX_CNT_RXTO_8US  (BIT(6) | BIT(4))
-+#define  VDMX_CNT_VDMXEN    BIT(1)
-+#define  VDMX_CNT_TXP   BIT(0)
 +#define VDMX_RXFILT	0x0014
-+#define  VDMX_RXFILT_FEN    BIT(31)
-+#define  VDMX_VENDOR_ID     0xb4a1
++#else
++#define VDMX_IEN 0x0100
++#define VDMX_RXF 0x0200
++#define VDMX_TXF 0x0300
++#define VDMX_CNT 0x0400
++#define VDMX_RXFILT	0x0500
++#endif
 +
++/* VDMX_STATR */
++#define VDMX_STATR_RXNDW   GENMASK(23, 16)
++#define VDMX_STATR_RXNDW_OFFSET    16
++#define VDMX_STATR_RXDR BIT(2)
++#define VDMX_STATR_RXF BIT(1)
++#define VDMX_STATR_TXS BIT(0)
++
++/* VDMX_IEN */
++#define VDMX_IEN_RXDREN BIT(2)
++#define VDMX_IEN_RXFEN BIT(1)
++#define VDMX_IEN_TXSEN BIT(0)
++
++/* VDMX_CNT */
++#define VDMX_CNT_RXTO_05US BIT(4)
++#define VDMX_CNT_RXTO_1US  BIT(5)
++#define VDMX_CNT_RXTO_2US  (BIT(5) | BIT(4))
++#define VDMX_CNT_RXTO_4US  BIT(6)
++#define VDMX_CNT_RXTO_8US  (BIT(6) | BIT(4))
++#define VDMX_CNT_VDMXEN    BIT(1)
++#define VDMX_CNT_TXP   BIT(0)
++
++/* VDMX_RXFILT */
++#define VDMX_RXFILT_FEN    BIT(31)
++
++#define VDMX_VENDOR_ID     0xb4a1
 +#define VDMX_RX_LEN	1024
 +#define VDMX_TX_LEN	4
 +#define VDMA_BUFFER_SIZE SZ_16K
@@ -381,11 +397,12 @@ index 000000000000..48dd099d59d5
 +{
 +	int ret = 0;
 +	u32 reg_val = 0;
++#ifdef CONFIG_ARCH_NPCM7XX
 +	struct regmap *gcr = priv->gcr_base;
 +
 +	/* Configure PCIE phy selection for bridge */
 +	regmap_update_bits(gcr, MFSEL3, MFSEL3_PCIE_PUSE, ~MFSEL3_PCIE_PUSE);
-+
++#endif
 +	/* Clear VDM STAT */
 +	regmap_write(priv->vdmx_base, VDMX_STATR,
 +		     VDMX_STATR_RXDR | VDMX_STATR_RXF | VDMX_STATR_TXS);
@@ -664,13 +681,14 @@ index 000000000000..48dd099d59d5
 +	if (IS_ERR(priv->vdma_base))
 +		return PTR_ERR(priv->vdma_base);
 +
++#ifdef CONFIG_ARCH_NPCM7XX
 +	priv->gcr_base =
 +		syscon_regmap_lookup_by_compatible("nuvoton,npcm750-gcr");
 +	if (IS_ERR(priv->gcr_base)) {
 +		dev_err(priv->dev, "failed to find nuvoton,npcm750-gcr\n");
 +		return PTR_ERR(priv->gcr_base);
 +	}
-+
++#endif
 +	platform_set_drvdata(pdev, priv);
 +
 +	return 0;
@@ -783,6 +801,7 @@ index 000000000000..48dd099d59d5
 +
 +static const struct of_device_id npcm7xx_vdm_match[] = {
 +	{ .compatible = "nuvoton,npcm750-vdm", },
++	{ .compatible = "nuvoton,npcm845-vdm", },
 +	{},
 +};
 +
