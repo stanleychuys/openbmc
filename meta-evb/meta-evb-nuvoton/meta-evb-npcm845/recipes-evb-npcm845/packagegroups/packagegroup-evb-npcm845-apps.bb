@@ -27,6 +27,7 @@ RDEPENDS_${PN}-chassis = " \
 
 SUMMARY_${PN}-fans = "EVB NPCM845 Fans"
 RDEPENDS_${PN}-fans = " \
+        phosphor-pid-control \
         "
 
 SUMMARY_${PN}-flash = "EVB NPCM845 Flash"
