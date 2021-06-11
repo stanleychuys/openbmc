@@ -1446,11 +1446,11 @@ Please refer to [IPMI Website](https://www.intel.com/content/www/us/en/products/
 <img align="right" width="30%" src="https://cdn.rawgit.com/NTC-CCBG/snapshots/dfdfd04/openbmc/message_bridge.png">
 
 IPMI daemon would set or get D-Bus property to/from path like: `/xyz/openbmc_project/control/host0/power_cap` when get DCMI command from IPMI tool via network or LPC.
-[Phosphor-node-manager-proxy](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi/phosphor-node-manager-proxy) will handle the property change and present the property value.
+[Phosphor-node-manager-proxy](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-x86/node-manager) will handle the property change and present the property value.
 Once the **phosphor-node-manager-proxy** property changed, it will prepare IPMB package data and call D-Bus method "sendRequest" to D-Bus path: `/xyz/openbmc_project/Ipmi/Channel/Ipmb`.
 Finally, IPMB gets the request and constructs I2C command from the request, then sends the I2C command to ME(Intel Management Engine) for getting information which controlled by ME.
 
-The patch integrates the [ipmid](https://github.com/openbmc/phosphor-host-ipmid), [phosphor-node-manager-proxy](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-phosphor/ipmi/phosphor-node-manager-proxy) and [ipmbbridge](https://github.com/openbmc/ipmbbridge) projects.
+The patch integrates the [ipmid](https://github.com/openbmc/phosphor-host-ipmid), [phosphor-node-manager-proxy](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-quanta/meta-olympus-nuvoton/recipes-x86/node-manager) and [ipmbbridge](https://github.com/openbmc/ipmbbridge) projects.
 
 
 **Source URL**
