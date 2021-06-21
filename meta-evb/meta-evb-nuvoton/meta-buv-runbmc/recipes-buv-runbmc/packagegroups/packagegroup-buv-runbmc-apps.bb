@@ -19,18 +19,14 @@ RDEPENDS_${PN}-buv-common-utils = " \
     obmc-console \
     phosphor-sel-logger \
     rsyslog \
-    phosphor-host-postd \
     obmc-ikvm \
     iperf3 \
     iperf2 \
-    dhcpcd \
     phosphor-ipmi-fru \
     usb-network \
     nmon \
     memtester \
     usb-emmc-storage \
-    mctpd \
-    pldmsensors \
     "
 
 SUMMARY_${PN}-buv-system = "BUV NUVOTON System"
