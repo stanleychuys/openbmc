@@ -27,6 +27,7 @@ RDEPENDS_${PN}-buv-common-utils = " \
     nmon \
     memtester \
     usb-emmc-storage \
+    loadmcu \
     "
 
 SUMMARY_${PN}-buv-system = "BUV NUVOTON System"
