@@ -1,4 +1,4 @@
-From eee53b269f70fbf2e016b60f911043e5a35a3a17 Mon Sep 17 00:00:00 2001
+From 1b5e6414a1bfeec29cc4b5db88aefd27fa891e7e Mon Sep 17 00:00:00 2001
 From: Joseph Liu <kwliu@nuvoton.com>
 Date: Tue, 8 Jun 2021 12:12:30 +0800
 Subject: [PATCH] driver: misc: add nuvoton vdmx/vdma driver
