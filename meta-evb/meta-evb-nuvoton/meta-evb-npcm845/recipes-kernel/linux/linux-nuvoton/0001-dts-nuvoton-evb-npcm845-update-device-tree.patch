@@ -1,23 +1,31 @@
-From 04e19e6266cf88a211163953f14c643a06b2776b Mon Sep 17 00:00:00 2001
+From 88ae94dd99b873a7f0a6fc8e85612a6839b3e836 Mon Sep 17 00:00:00 2001
 From: Stanley Chu <yschu@nuvoton.com>
-Date: Thu, 20 May 2021 17:00:16 +0800
-Subject: [PATCH] dts: evb-npcm845: update dsts
+Date: Thu, 24 Jun 2021 17:19:23 +0800
+Subject: [PATCH] dts: nuvoton: evb-npcm845: update device tree
 
-1. modify the chip select info under FIU0
-2. remove spi-rx-bus-width in FIU0/FIU3
-3. update i2c address of tmp100 sensor
-4. remove pinctrl setting of pwm8~11, this will conflict with SMB12
+1. change flash layout
+2. add SGMII workaround for EVB Rev.A
 
 Signed-off-by: Stanley Chu <yschu@nuvoton.com>
 ---
- .../boot/dts/nuvoton/nuvoton-npcm845-evb.dts  | 82 ++++++++-----------
- 1 file changed, 36 insertions(+), 46 deletions(-)
+ .../boot/dts/nuvoton/nuvoton-npcm845-evb.dts  | 71 ++++++++-----------
+ .../nuvoton/nuvoton-npcm845-pincfg-evb.dtsi   |  8 +++
+ 2 files changed, 37 insertions(+), 42 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts
-index 3ca26fe5c675..73f0cfa4c457 100644
+index f8547c275ef9..2136fc9cd318 100644
 --- a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts
 +++ b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts
-@@ -171,59 +171,41 @@
+@@ -114,6 +114,8 @@
+ 		gmac0: eth@f0802000 {
+ 			phy-mode = "rgmii-id";
+ 			snps,eee-force-disable;
++			gpios = <&gpio2 14 GPIO_ACTIVE_HIGH>,
++					<&gpio2 15 GPIO_ACTIVE_HIGH>;
+ 			status = "okay";
+ 		};
+ 
+@@ -169,58 +171,41 @@
  
  		fiu0: spi@fb000000 {
  			status = "okay";
@@ -26,7 +34,6 @@ index 3ca26fe5c675..73f0cfa4c457 100644
  				compatible = "jedec,spi-nor";
  				#address-cells = <1>;
  				#size-cells = <1>;
--				spi-rx-bus-width = <2>;
 -				reg = <0>;
 +				reg = <1>;
  				spi-max-frequency = <5000000>;
@@ -102,42 +109,34 @@ index 3ca26fe5c675..73f0cfa4c457 100644
  					};
  				};
  			};
-@@ -258,7 +240,6 @@
- 				compatible = "jedec,spi-nor";
- 				#address-cells = <1>;
- 				#size-cells = <1>;
--				spi-rx-bus-width = <2>;
- 				reg = <0>;
- 				spi-max-frequency = <5000000>;
- 				partitions@A0000000 {
-@@ -410,6 +391,15 @@
+@@ -502,6 +487,8 @@
+ 		pinctrl-0 = <
+ 				&jtag2_pins
+ 				&lpc_pins
++				&pin108_slew
++				&pin109_slew
+ 				&pin240_slew
+ 				&pin241_slew
+ 				&pin242_slew
+diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
+index 6aa77fe9a007..b6db60698f8f 100644
+--- a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
++++ b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
+@@ -3,6 +3,14 @@
  
- 			pwm_fan:pwm-fan-controller@103000 {
- 				status = "okay";
-+				pinctrl-names = "default";
-+				pinctrl-0 = <&pwm0_pins &pwm1_pins
-+					&pwm2_pins &pwm3_pins
-+					&pwm4_pins &pwm5_pins
-+					&pwm6_pins &pwm7_pins
-+					&fanin0_pins &fanin1_pins
-+					&fanin2_pins &fanin3_pins
-+					&fanin4_pins &fanin5_pins
-+					&fanin6_pins &fanin7_pins>;
- 				#address-cells = <1>;
- 				#size-cells = <0>;
- 				fan@0 {
-@@ -542,9 +532,9 @@
- 
- &i2c6 {
- 	status = "okay";
--	tmp100@24 {
-+	tmp100@48 {
- 		compatible = "tmp100";
--		reg = <0x24>;
-+		reg = <0x48>;
- 		status = "okay";
- 	};
- };
+ / {
+ 	pinctrl: pinctrl@f0800000 {
++		pin108_slew: pin108-slew {
++			pins = "GPIO108/SG1_MDC";
++			slew-rate = <1>;
++		};
++		pin109_slew: pin109-slew {
++			pins = "GPIO109/SG1_MDIO";
++			slew-rate = <1>;
++		};
+ 		pin33_slew: pin33-slew {
+ 			pins = "I3C4_SCL";
+ 			slew-rate = <1>;
 -- 
 2.17.1
 
