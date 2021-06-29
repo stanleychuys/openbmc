@@ -1,19 +1,39 @@
-SUMMARY = "OpenBMC for BUV Nuvoton system - Applications"
+SUMMARY = "OpenBMC for BUV RUNBMC system - Applications"
 PR = "r1"
 
 inherit packagegroup
+inherit buv-entity-utils
 
 PROVIDES = "${PACKAGES}"
 PACKAGES = " \
-    ${PN}-buv-system \
-    ${PN}-buv-common-utils \
-    ${PN}-buv-dev \
+    ${PN}-chassis \
+    ${PN}-fans \
+    ${PN}-system \
+    ${@entity_enabled(d, '${PN}-entity')} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'buv-dev', '${PN}-dev', '', d)} \
+    "
+PROVIDES += "virtual/oobmc-chassis-mgmt"
+PROVIDES += "virtual/obmc-fan-mgmt"
+PROVIDES += "virtual/obmc-system-mgmt"
+
+RPROVIDES_${PN}-chassis += "virtual-obmc-chassis-mgmt"
+RPROVIDES_${PN}-fans += "virtual-obmc-fan-mgmt"
+RPROVIDES_${PN}-system = "virtual-obmc-system-mgmt"
+
+SUMMARY_${PN}-chassis = "BUV RUNBMC Chassis"
+RDEPENDS_${PN}-chassis = " \
+    phosphor-pid-control \
     "
 
-SUMMARY_${PN}-buv-common-utils = "BUV NUVOTON common utils"
-RDEPENDS_${PN}-buv-common-utils = " \
+SUMMARY_${PN}-fans = "BUV RUNBMC Fans"
+RDEPENDS_${PN}-fans = " \
+    phosphor-pid-control \
+    "
+
+SUMMARY_${PN}-system = "BUV RUNBMC System"
+RDEPENDS_${PN}-system = " \
     ipmitool \
-    phosphor-webui \
+    webui-vue \
     phosphor-host-postd \
     loadsvf \
     obmc-console \
@@ -22,7 +42,6 @@ RDEPENDS_${PN}-buv-common-utils = " \
     obmc-ikvm \
     iperf3 \
     iperf2 \
-    phosphor-ipmi-fru \
     usb-network \
     nmon \
     memtester \
@@ -30,13 +49,13 @@ RDEPENDS_${PN}-buv-common-utils = " \
     loadmcu \
     "
 
-SUMMARY_${PN}-buv-system = "BUV NUVOTON System"
-RDEPENDS_${PN}-buv-system = " \
+SUMMARY_${PN}-entity = "BUV RUNBMC entity"
+RDEPENDS_${PN}-entity = " \
     intel-ipmi-oem \
     "
 
-SUMMARY_${PN}-buv-dev = "BUV NUVOTON development tools"
-RDEPENDS_${PN}-buv-dev = " \
+SUMMARY_${PN}-dev = "BUV RUNBMC development tools"
+RDEPENDS_${PN}-dev = " \
     ent \
     dhrystone \
     rw-perf \

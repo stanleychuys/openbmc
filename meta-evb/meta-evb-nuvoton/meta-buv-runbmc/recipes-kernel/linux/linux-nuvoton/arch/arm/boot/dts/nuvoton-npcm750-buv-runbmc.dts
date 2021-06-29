@@ -127,7 +127,7 @@
 			<&gpio4 13 0>,
 			<&gpio2 24 0>,
 			<&gpio2 26 0>;
-		status = "disabled";
+		status = "okay";
     };
 };
 
@@ -679,5 +679,30 @@
 				&gpio24o_pins
 				&gpio137o_pins
 				&gpio25o_pins
+				&gpio84_pins
+				&gpio85_pins
+				&gpio122_pins
+				&gpio124_pins
+				&gpio125_pins
+				&gpio126_pins
 				>;
+		gpio2: gpio@f0012000 {
+			/* POWER_BUTTON=gpio84 */
+			/* RESET_BUTTON=gpio85 */
+			gpio-line-names =
+			/*64-95*/
+			"","","","","","","","",
+			"","","","","","","","",
+			"","","","","POWER_BUTTON","RESET_BUTTON","","",
+			"","","","","","","","";
+		};
+		gpio3: gpio@f0013000 {
+			/* POST_COMPLETE=gpio122 */
+			gpio-line-names =
+			/*96-127*/
+			"","","","","","","","",
+			"","","","","","","","",
+			"","","","","","","","",
+			"","","POST_COMPLETE","","PS_PWROK","POWER_OUT","RESET_OUT","";
+		};
 };

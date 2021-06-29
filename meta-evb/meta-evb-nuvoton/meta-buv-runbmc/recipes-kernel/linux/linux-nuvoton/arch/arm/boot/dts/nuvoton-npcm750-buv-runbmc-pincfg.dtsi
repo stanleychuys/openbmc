@@ -98,5 +98,35 @@
 			bias-disable;
 			output-low;
 		};
+		gpio84_pins: gpio84-pins {
+			pins = "GPIO84/R2TXD0";
+			bias-disable;
+			input-enable;
+		};
+		gpio85_pins: gpio85-pins {
+			pins = "GPIO85/R2TXD1";
+			bias-disable;
+			input-enable;
+		};
+		gpio122_pins: gpio122-pins {
+			pins = "GPIO122/SMB2BSDA";
+			bias-disable;
+			input-enable;
+		};
+		gpio124_pins: gpio124-pins {
+			pins = "GPIO124/SMB1CSDA";
+			bias-disable;
+			input-enable;
+		};
+		gpio125_pins: gpio125-pins {
+			pins = "GPIO125/SMB1CSCL";
+			bias-disable;
+			input-enable;
+		};
+		gpio126_pins: gpio126-pins {
+			pins = "GPIO126/SMB1BSDA";
+			bias-disable;
+			input-enable;
+		};
 	};
 };
