@@ -1,7 +1,7 @@
 KBRANCH ?= "NPCM-5.10-OpenBMC"
 LINUX_VERSION ?= "5.10.14"
 
-SRCREV="d39a86b6232145f73dfe85cad63bf46056582bc7"
+SRCREV="33cf9559ab17cd18d03ce4dad2aabdea1f00078e"
 
 require linux-nuvoton.inc
 
@@ -10,6 +10,7 @@ SRC_URI_append_nuvoton = " file://0003-i2c-nuvoton-npcm750-runbmc-integrate-the-
 SRC_URI_append_nuvoton = " file://0004-driver-ncsi-replace-del-timer-sync.patch"
 SRC_URI_append_nuvoton = " file://0008-WAR-skip-clear-fault-for-flexpower.patch"
 SRC_URI_append_nuvoton = " file://0015-driver-misc-nuvoton-vdm-support-openbmc-libmctp.patch"
+SRC_URI_append_nuvoton = " file://0017-drivers-i2c-workaround-for-i2c-slave-behavior.patch"
 
 # V4L2 VCD driver
 #SRC_URI_append_nuvoton = " file://v4l2.cfg"
