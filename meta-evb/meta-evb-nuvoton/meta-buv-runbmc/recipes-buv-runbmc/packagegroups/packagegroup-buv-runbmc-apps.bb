@@ -1,4 +1,4 @@
-SUMMARY = "OpenBMC for BUV RUNBMC system - Applications"
+SUMMARY = "OpenBMC for BUV RunBMC system - Applications"
 PR = "r1"
 
 inherit packagegroup
@@ -12,25 +12,22 @@ PACKAGES = " \
     ${@entity_enabled(d, '${PN}-entity')} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'buv-dev', '${PN}-dev', '', d)} \
     "
-PROVIDES += "virtual/oobmc-chassis-mgmt"
-PROVIDES += "virtual/obmc-fan-mgmt"
-PROVIDES += "virtual/obmc-system-mgmt"
 
 RPROVIDES_${PN}-chassis += "virtual-obmc-chassis-mgmt"
 RPROVIDES_${PN}-fans += "virtual-obmc-fan-mgmt"
 RPROVIDES_${PN}-system = "virtual-obmc-system-mgmt"
 
-SUMMARY_${PN}-chassis = "BUV RUNBMC Chassis"
+SUMMARY_${PN}-chassis = "BUV RunBMC Chassis"
 RDEPENDS_${PN}-chassis = " \
-    phosphor-pid-control \
+    x86-power-control \
     "
 
-SUMMARY_${PN}-fans = "BUV RUNBMC Fans"
+SUMMARY_${PN}-fans = "BUV RunBMC Fans"
 RDEPENDS_${PN}-fans = " \
     phosphor-pid-control \
     "
 
-SUMMARY_${PN}-system = "BUV RUNBMC System"
+SUMMARY_${PN}-system = "BUV RunBMC System"
 RDEPENDS_${PN}-system = " \
     ipmitool \
     webui-vue \
@@ -49,12 +46,12 @@ RDEPENDS_${PN}-system = " \
     loadmcu \
     "
 
-SUMMARY_${PN}-entity = "BUV RUNBMC entity"
+SUMMARY_${PN}-entity = "BUV RunBMC entity"
 RDEPENDS_${PN}-entity = " \
     intel-ipmi-oem \
     "
 
-SUMMARY_${PN}-dev = "BUV RUNBMC development tools"
+SUMMARY_${PN}-dev = "BUV RunBMC development tools"
 RDEPENDS_${PN}-dev = " \
     ent \
     dhrystone \
