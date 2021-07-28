@@ -52,4 +52,5 @@ RDEPENDS_${PN}-system = " \
         rsyslog \
         loadsvf \
         pciutils \
+        npcm8xx-cp-fw \
         "
