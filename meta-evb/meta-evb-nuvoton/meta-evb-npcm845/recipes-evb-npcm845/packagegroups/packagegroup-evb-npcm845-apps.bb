@@ -51,4 +51,5 @@ RDEPENDS_${PN}-system = " \
         phosphor-sel-logger \
         rsyslog \
         loadsvf \
+        pciutils \
         "
