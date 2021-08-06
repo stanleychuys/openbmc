@@ -106,7 +106,7 @@
 			<offset>140</offset>
 			<size>4</size>
 		</config>
-		<content format='32bit'>0x0</content>               <!-- content the user should fill -->
+		<content format='32bit'>0x1</content>               <!-- content the user should fill -->
 	</BinField>
 
 	<BinField>
