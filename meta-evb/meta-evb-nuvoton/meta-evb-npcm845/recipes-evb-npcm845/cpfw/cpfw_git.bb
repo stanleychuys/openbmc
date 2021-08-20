@@ -3,7 +3,7 @@ SECTION = "kernel"
 
 LICENSE = "CLOSED"
 
-SRC_URI_npcm8xx_append = "file://cp_fw.elf"
+SRC_URI = "file://cp_fw.elf"
 
 S = "${WORKDIR}"
 INSANE_SKIP_${PN} = "arch"
