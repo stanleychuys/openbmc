@@ -4,8 +4,6 @@ Nuvoton NPCM845 Evaluation Board
 This is the Nuvoton NPCM845 evaluation board layer.
 The NPCM845 is an ARM based SoC with external DDR RAM and 
 supports a large set of peripherals made by Nuvoton. 
-More information about the NPCM8XX can be found
-[here](http://www.nuvoton.com/hq/products/cloud-computing/ibmc/?__locale=en).
 
 # Dependencies
 This layer depends on:
@@ -189,4 +187,23 @@ cp.b 0x10000000 0x88200000 ${filesize}
 setenv ethact gmac2
 tftp 10000000 image-u-boot
 cp.b 0x10000000 0x80000000 ${filesize}
+```
+
+3. Booting to OpenBMC:
+
+* Enter boot command
+```ruby
+run romboot
+```
+
+4. OpenBMC Login Prompts.
+
+* User: root
+* Password: 0penBmc
+```ruby
+[  OK  ] Reached target Login Prompts.
+
+Phosphor OpenBMC (Phosphor OpenBMC Project Reference Distro) 0.1.0 evb-npcm845 ttyS0
+
+evb-npcm845 login:
 ```
