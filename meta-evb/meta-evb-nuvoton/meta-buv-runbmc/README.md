@@ -24,6 +24,10 @@ Please submit any patches against the meta-buv-runbmc layer to the maintainer of
 * Jim Liu, <JJLIU0@nuvoton.com>
 * Joseph Liu, <kwliu@nuvoton.com>
 
+# Quick Setup
+- [Quick Setup Guide](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-evb/meta-evb-nuvoton/meta-buv-runbmc/HSBUV_Nuvoton_NPCM7XX_RunBMC_Setup_Guide.pdf)
+
+
 # Rework for BUV Board
 If you want to test secure boot, you need to rework the RunBMC card.
 - Please look at [Rework Guide](https://github.com/Nuvoton-Israel/openbmc/tree/runbmc/meta-evb/meta-evb-nuvoton/meta-buv-runbmc/REWORK.md)
@@ -32,6 +36,7 @@ If you want to test secure boot, you need to rework the RunBMC card.
 
 - [Dependencies](#dependencies)
 - [Contacts for Patches](#contacts-for-patches)
+- [Quick Setup](#quick-setup)
 - [Rework for BUV Board](#rework-for-buv-board)
 - [Features of NPCM750 RunBMC BUV](#features-of-npcm750-runbmc-buv)
   * [WebUI](#webui)
