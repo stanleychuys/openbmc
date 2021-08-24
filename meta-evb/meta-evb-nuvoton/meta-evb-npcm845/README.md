@@ -9,7 +9,7 @@ supports a large set of peripherals made by Nuvoton.
 This layer depends on:
 
 ```
-  URI: github.com/NNuvoton-Israel/openbmc.git
+  URI: github.com/Nuvoton-Israel/openbmc.git
   branch: npcm-v2.10
 ```
 
