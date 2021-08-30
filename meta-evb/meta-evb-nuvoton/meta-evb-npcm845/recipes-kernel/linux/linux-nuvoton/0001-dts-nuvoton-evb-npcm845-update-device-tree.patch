@@ -1,22 +1,23 @@
-From 88ae94dd99b873a7f0a6fc8e85612a6839b3e836 Mon Sep 17 00:00:00 2001
+From 26e7b2ab45c1a99030a6eeffda12eb82645c91f7 Mon Sep 17 00:00:00 2001
 From: Stanley Chu <yschu@nuvoton.com>
-Date: Thu, 24 Jun 2021 17:19:23 +0800
+Date: Mon, 30 Aug 2021 11:43:57 +0800
 Subject: [PATCH] dts: nuvoton: evb-npcm845: update device tree
 
 1. change flash layout
 2. add SGMII workaround for EVB Rev.A
+3. connect JTM1 to onboard CPLD
 
 Signed-off-by: Stanley Chu <yschu@nuvoton.com>
 ---
- .../boot/dts/nuvoton/nuvoton-npcm845-evb.dts  | 71 ++++++++-----------
- .../nuvoton/nuvoton-npcm845-pincfg-evb.dtsi   |  8 +++
- 2 files changed, 37 insertions(+), 42 deletions(-)
+ .../boot/dts/nuvoton/nuvoton-npcm845-evb.dts  | 72 ++++++++-----------
+ .../nuvoton/nuvoton-npcm845-pincfg-evb.dtsi   | 13 ++++
+ 2 files changed, 43 insertions(+), 42 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts
-index f8547c275ef9..2136fc9cd318 100644
+index b2e55086c701..a0916df075aa 100644
 --- a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts
 +++ b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts
-@@ -114,6 +114,8 @@
+@@ -137,6 +137,8 @@
  		gmac0: eth@f0802000 {
  			phy-mode = "rgmii-id";
  			snps,eee-force-disable;
@@ -25,7 +26,7 @@ index f8547c275ef9..2136fc9cd318 100644
  			status = "okay";
  		};
  
-@@ -169,58 +171,41 @@
+@@ -192,58 +194,41 @@
  
  		fiu0: spi@fb000000 {
  			status = "okay";
@@ -109,23 +110,29 @@ index f8547c275ef9..2136fc9cd318 100644
  					};
  				};
  			};
-@@ -502,6 +487,8 @@
+@@ -525,6 +510,9 @@
  		pinctrl-0 = <
  				&jtag2_pins
  				&lpc_pins
++				&pin70_o
 +				&pin108_slew
 +				&pin109_slew
  				&pin240_slew
  				&pin241_slew
  				&pin242_slew
 diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
-index 6aa77fe9a007..b6db60698f8f 100644
+index 6aa77fe9a007..fed3e1713509 100644
 --- a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
 +++ b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
-@@ -3,6 +3,14 @@
+@@ -3,6 +3,19 @@
  
  / {
  	pinctrl: pinctrl@f0800000 {
++		pin70_o: pin70-o {
++			 pins = "GPIO70/FANIN6";
++			 bias-disable;
++			 output-high;
++		};
 +		pin108_slew: pin108-slew {
 +			pins = "GPIO108/SG1_MDC";
 +			slew-rate = <1>;
