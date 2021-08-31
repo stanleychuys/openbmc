@@ -21,7 +21,7 @@ FLASH_RWFS_OFFSET = "31744"
 FLASH_UBI_RWFS_SIZE = "6144"
 FLASH_UBI_RWFS_TXT_SIZE = "6MiB"
 
-SERIAL_CONSOLES = "115200;ttyS3"
+SERIAL_CONSOLES = "115200;ttyS0"
 
 SOC_FAMILY = "npcm8xx"
 include conf/machine/include/soc-family.inc
