@@ -37,7 +37,7 @@ Please submit any patches against the meta-evb-npcm845 layer to the maintainer o
 ## Setting up EVB
 
 ### 1) Strap settings
-* By default, only turn on strap 4 of the SW_STRAP1_8 dip switch.
+* By default, only turn on strap 5 of the SW_STRAP1_8 dip switch.
 * The other straps remain off.
 
 ### 2) Power Source selector
@@ -101,6 +101,16 @@ bitbake obmc-phosphor-image
 ```
 DISTRO=arbel-evb-entity bitbake obmc-phosphor-image
 ```
+
+### 4) Output Images
+* You will find images in path build/evb-npcm845/tmp/deploy/images/evb-npcm845
+
+Type          | Description                                                                                                     |
+:-------------|:-------------------------------------------------------------------------------------------------------- |
+image-bmc   |  includes image-u-boot and image-kernel and image-rofs                                                                     |
+image-uboot   |  tipfw + bootlock + u-boot                                                                     |
+image-kernel  |  Fit Image(Linux kernel + dtb+ initramfs)                                                                                     |
+image-rofs    |  OpenBMC Root Filesystem                                                          |
 
 ## Programming Firmware for the first time
 
@@ -184,6 +194,7 @@ cp.b 0x10000000 0x88200000 ${filesize}
 
 * Flash bootloader
 ```ruby
+/* BMC is booted from flsh0, please flash bootloader to flash0 */
 setenv ethact gmac2
 tftp 10000000 image-u-boot
 cp.b 0x10000000 0x80000000 ${filesize}
