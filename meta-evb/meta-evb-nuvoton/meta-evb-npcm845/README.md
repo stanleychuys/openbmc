@@ -31,6 +31,11 @@ Please submit any patches against the meta-evb-npcm845 layer to the maintainer o
   * [Programming Firmware for the first time](#programming-firmware-for-the-first-time)
     + [Bootloader](#bootloader)
     + [OpenBMC](#openbmc)
+- [Interfaces](#interfaces)
+  * [UART](#uart)
+  * [Network](#network)
+  * [I3C](#i3c)
+  * [JTag Master](#jtag-master)
 
 # Getting Started
 
@@ -218,3 +223,40 @@ Phosphor OpenBMC (Phosphor OpenBMC Project Reference Distro) 0.1.0 evb-npcm845 t
 
 evb-npcm845 login:
 ```
+
+# Interfaces
+
+## UART
+
+The EVB has FTDI USB_TO_UART and UART Headers, the user can select the UART rotue through the dip switch.
+
+1. Strap Settings
+
+- Strap 5 of the SW_STRAP1_8 dip switch
+  * Turn on strap 5 that BMC UART can rout via SI2 pins.
+  * Aslo, all logs can be rout to the same UART port.
+
+- Strap 7 of the SW1 dip switch
+  * Turn on strap 7 to isolate USB FTDI.
+  * UART headers can be used when FTDI is isolated.
+
+2. FTDI USB_TO_UART
+
+- Connects a Mini-USB cable to J_USB_TO_UART
+  * You will get 4 serial port options from your terminal settings.
+  * Please select second serial port and set baud rate to 115200.
+
+3. UART Headers
+
+- Connects a USB FTDI cable to J_SI2_BU0
+  * Turn on strap 7 of the SW1 dip switch
+  * Set baud rate to 115200.
+
+## Network
+
+The EVB has 3 RJ45 headers and 1 NCSI header
+
+- J_SGMII: 1000/100/10Mbps SGMII, eth0
+- J_RGMII: 1000/100/10Mbps RGMII, eth1
+- J_RMII:  100/10Mbps RMII, eth3
+- J_EMC: NCSI header, eth2
