@@ -296,6 +296,7 @@ CONFIG_EEPROM_SPD5118=y
 ```
 ## JTAG Master
 
+The EVB has JTAG Master 1 interface on the J_JTAGM header.
 
 ### Onboard CPLD
 - Route JTAG Master 1 interface to onboard CPLD.
@@ -310,4 +311,5 @@ loadsvf -d /dev/jtag0 -s arbelevb_cpld.svf
 ```
 - After CPLD is programmed, three LEDs (blue/yellow/red, near to SW1) are turned on.
 
-
+- The CPLD SVF can be downloaded from here:
+[arbelevb_cpld.svf](https://github.com/Nuvoton-Israel/openbmc/tree/npcm-v2.10/meta-evb/meta-evb-nuvoton/meta-evb-npcm845/recipes-evb-npcm845/loadsvf/files/arbelevb_cpld.svf )
