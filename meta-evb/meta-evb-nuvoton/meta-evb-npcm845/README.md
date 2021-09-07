@@ -260,3 +260,54 @@ The EVB has 3 RJ45 headers and 1 NCSI header
 - J_RGMII: 1000/100/10Mbps RGMII, eth1
 - J_RMII:  100/10Mbps RMII, eth3
 - J_EMC: NCSI header, eth2
+
+## I3C
+
+The EVB has I3C0~I3C5 interfaces on the J_I3C header.
+
+### SPD5118 device
+- Connect a Renesas SPD5118 moudule to EVB I3C1 interface
+  * connect J_I3C.3 to device SCL
+  * connect J_I3C.4 to device SDA
+  * connect TP_3.3V to device 3V3
+  * connect GND to device GND
+- Edit nuvoton-npcm845-evb.dts. (The slave static address 0x57 depends on HSA pin of DIMM)
+```
+    i3c1: i3c@fff11000 {
+        status = "okay";
+        i2c-scl-hz = <400000>;
+        i3c-scl-hz = <4000000>;
+        static-address;
+        eeprom@0x57 {
+            reg = <0x57 0x4CC 0x51180000>;
+        };
+
+    };
+```
+- Enable Kernel config
+```
+CONFIG_I3C=y
+CONFIG_SVC_I3C_MASTER=y
+CONFIG_EEPROM_SPD5118=y
+```
+- Boot EVB to Openbmc, there is a sysfs interface that allow to do read/write access to the eeprom of the DIMM.  The size of eeprom is 1024 bytes
+```
+/sys/bus/i3c/devices/1-4cc51180000/eeprom
+```
+## JTAG Master
+
+
+### Onboard CPLD
+- Route JTAG Master 1 interface to onboard CPLD.
+```
+echo 70 > /sys/class/gpio/export
+echo out > /sys/class/gpio/gpio70/direction
+echo 1 > /sys/class/gpio/gpio70/value
+```
+- Program CPLD, arbelevb_cpld.svf is the firmware file.
+```
+loadsvf -d /dev/jtag0 -s arbelevb_cpld.svf
+```
+- After CPLD is programmed, three LEDs (blue/yellow/red, near to SW1) are turned on.
+
+
