@@ -1,20 +1,21 @@
-From 26e7b2ab45c1a99030a6eeffda12eb82645c91f7 Mon Sep 17 00:00:00 2001
+From 81e52b65aa6767d0542d9aeee650bcca6907aa56 Mon Sep 17 00:00:00 2001
 From: Stanley Chu <yschu@nuvoton.com>
 Date: Mon, 30 Aug 2021 11:43:57 +0800
 Subject: [PATCH] dts: nuvoton: evb-npcm845: update device tree
 
-1. change flash layout
-2. add SGMII workaround for EVB Rev.A
-3. connect JTM1 to onboard CPLD
+1. change FIU0 CS1 flash layout
+2. use dual IO for FIU0 direct Read
+3. add SGMII workaround for EVB Rev.A
+4. connect JTM1 to onboard CPLD
 
 Signed-off-by: Stanley Chu <yschu@nuvoton.com>
 ---
- .../boot/dts/nuvoton/nuvoton-npcm845-evb.dts  | 72 ++++++++-----------
+ .../boot/dts/nuvoton/nuvoton-npcm845-evb.dts  | 74 ++++++++-----------
  .../nuvoton/nuvoton-npcm845-pincfg-evb.dtsi   | 13 ++++
- 2 files changed, 43 insertions(+), 42 deletions(-)
+ 2 files changed, 45 insertions(+), 42 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts
-index b2e55086c701..a0916df075aa 100644
+index a9b077208061..d656b212a50e 100644
 --- a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts
 +++ b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts
 @@ -137,6 +137,8 @@
@@ -26,7 +27,7 @@ index b2e55086c701..a0916df075aa 100644
  			status = "okay";
  		};
  
-@@ -192,58 +194,41 @@
+@@ -192,58 +194,43 @@
  
  		fiu0: spi@fb000000 {
  			status = "okay";
@@ -36,6 +37,8 @@ index b2e55086c701..a0916df075aa 100644
  				#address-cells = <1>;
  				#size-cells = <1>;
 -				reg = <0>;
++				spi-rx-bus-width = <2>;
++				spi-tx-bus-width = <2>;
 +				reg = <1>;
  				spi-max-frequency = <5000000>;
 -				partitions@80000000 {
@@ -110,7 +113,7 @@ index b2e55086c701..a0916df075aa 100644
  					};
  				};
  			};
-@@ -525,6 +510,9 @@
+@@ -532,6 +519,9 @@
  		pinctrl-0 = <
  				&jtag2_pins
  				&lpc_pins
@@ -121,7 +124,7 @@ index b2e55086c701..a0916df075aa 100644
  				&pin241_slew
  				&pin242_slew
 diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
-index 6aa77fe9a007..fed3e1713509 100644
+index 98622205ed79..0cdb35aa8e87 100644
 --- a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
 +++ b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
 @@ -3,6 +3,19 @@
