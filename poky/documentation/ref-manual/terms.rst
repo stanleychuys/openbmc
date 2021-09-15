@@ -21,13 +21,12 @@ universal, the list includes them just in case:
 
       Information in append files extends or overrides the information in the
       similarly-named recipe file. For an example of an append file in use, see
-      the ":ref:`dev-manual/common-tasks:Using .bbappend Files in
-      Your Layer`" section in the Yocto Project Development Tasks Manual.
+      the    ":ref:`dev-manual/common-tasks:appending other layers metadata with your layer`"
+      section in the Yocto Project Development Tasks Manual.
 
       When you name an append file, you can use the "``%``" wildcard character
       to allow for matching recipe names. For example, suppose you have an
-      append file named as follows:
-      ::
+      append file named as follows::
 
          busybox_1.21.%.bbappend
 
@@ -98,11 +97,11 @@ universal, the list includes them just in case:
       .. note::
 
          By default, the Build Directory contains :term:`TMPDIR`, which is a
-         temporary directory the build system uses for its work. ``TMPDIR`` cannot
+         temporary directory the build system uses for its work. :term:`TMPDIR` cannot
          be under NFS. Thus, by default, the Build Directory cannot be under
          NFS. However, if you need the Build Directory to be under NFS, you can
-         set this up by setting ``TMPDIR`` in your ``local.conf`` file to use a local
-         drive. Doing so effectively separates ``TMPDIR`` from :term:`TOPDIR`, which is the
+         set this up by setting :term:`TMPDIR` in your ``local.conf`` file to use a local
+         drive. Doing so effectively separates :term:`TMPDIR` from :term:`TOPDIR`, which is the
          Build Directory.
 
    :term:`Build Host`

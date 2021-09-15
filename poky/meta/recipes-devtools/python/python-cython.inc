@@ -9,12 +9,12 @@ LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=e23fadd6ceef8c618fc1c65191d846fa"
 PYPI_PACKAGE = "Cython"
 BBCLASSEXTEND = "native nativesdk"
 
-SRC_URI[sha256sum] = "df6b83c7a6d1d967ea89a2903e4a931377634a297459652e4551734c48195406"
+SRC_URI[sha256sum] = "cdf04d07c3600860e8c2ebaad4e8f52ac3feb212453c1764a49ac08c827e8443"
 UPSTREAM_CHECK_REGEX = "Cython-(?P<pver>.*)\.tar"
 
 inherit pypi
 
-RDEPENDS_${PN}_class-target += "\
+RDEPENDS:${PN}:class-target += "\
     ${PYTHON_PN}-misc \
     ${PYTHON_PN}-netserver \
     ${PYTHON_PN}-pkgutil \
@@ -24,7 +24,7 @@ RDEPENDS_${PN}_class-target += "\
     ${PYTHON_PN}-xml \
 "
 
-RDEPENDS_${PN}_class-nativesdk += "\
+RDEPENDS:${PN}:class-nativesdk += "\
     nativesdk-${PYTHON_PN}-misc \
     nativesdk-${PYTHON_PN}-netserver \
     nativesdk-${PYTHON_PN}-pkgutil \
@@ -34,7 +34,7 @@ RDEPENDS_${PN}_class-nativesdk += "\
     nativesdk-${PYTHON_PN}-xml \
 "
 
-do_install_append() {
+do_install:append() {
 	# Make sure we use /usr/bin/env python
 	for PYTHSCRIPT in `grep -rIl '^#!.*python' ${D}`; do
 		sed -i -e '1s|^#!.*|#!/usr/bin/env ${PYTHON_PN}|' $PYTHSCRIPT

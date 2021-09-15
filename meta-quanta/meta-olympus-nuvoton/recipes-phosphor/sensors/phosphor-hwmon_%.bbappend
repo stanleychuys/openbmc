@@ -1,4 +1,4 @@
-FILESEXTRAPATHS_prepend_olympus-nuvoton := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:prepend:olympus-nuvoton := "${THISDIR}/${PN}:"
 
 SRC_URI_append_olympus-nuvoton = " file://xyz.openbmc_project.Hwmon_hostoff@.service"
 SRC_URI_append_olympus-nuvoton = " file://olympus-reload-sensor.sh"
@@ -35,7 +35,7 @@ ITEMS = " \
         "
 
 ENVS = "obmc/hwmon/ahb/apb/{0}.conf"
-SYSTEMD_ENVIRONMENT_FILE_${PN}_append_olympus-nuvoton = " ${@compose_list(d, 'ENVS', 'ITEMS')}"
+SYSTEMD_ENVIRONMENT_FILE:${PN}:append:olympus-nuvoton = " ${@compose_list(d, 'ENVS', 'ITEMS')}"
 
 # PECI
 PECINAMES = " \
@@ -47,10 +47,11 @@ PECINAMES = " \
 PECIITEMSFMT = "devices/platform/ahb/ahb--apb/f0100000.peci-bus/{0}.conf"
 PECIITEMS = "${@compose_list(d, 'PECIITEMSFMT', 'PECINAMES')}"
 PECIENVS = "obmc/hwmon/{0}"
-SYSTEMD_ENVIRONMENT_FILE_${PN}_append_olympus-nuvoton = " ${@compose_list(d, 'PECIENVS', 'PECIITEMS')}"
+SYSTEMD_ENVIRONMENT_FILE:${PN}:append:olympus-nuvoton = " ${@compose_list(d, 'PECIENVS', 'PECIITEMS')}"
 
-EXTRA_OEMESON_append_olympus-nuvoton  = " -Dupdate-functional-on-fail=true"
+EXTRA_OEMESON:append:olympus-nuvoton  = " -Dupdate-functional-on-fail=true"
 
+# need upstream
 SENSOR_ON_TMPL = "olympus-reload-sensor-on.service"
 CHASSIS_POWERON_TGTFMT = "obmc-chassis-poweron.target"
 ENABLE_POWER_FMT = "../${SENSOR_ON_TMPL}:${CHASSIS_POWERON_TGTFMT}.wants/${SENSOR_ON_TMPL}"
@@ -62,7 +63,8 @@ DISABLE_POWER_FMT = "../${SENSOR_OFF_TMPL}:${CHASSIS_POWEROFF_TGTFMT}.wants/${SE
 SYSTEMD_LINK_${PN} += "${@compose_list(d, 'DISABLE_POWER_FMT', 'OBMC_CHASSIS_INSTANCES')}"
 
 
-do_install_append_olympus-nuvoton() {
+do_install:append:olympus-nuvoton() {
     install -d ${D}/${bindir}
     install -m 0755 ${WORKDIR}/olympus-reload-sensor.sh ${D}${bindir}/
 }
+# upstream

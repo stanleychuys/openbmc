@@ -20,8 +20,10 @@ import string
 import threading
 import codecs
 import logging
+import tempfile
 from oeqa.utils.dump import HostDumper
 from collections import defaultdict
+import importlib
 
 # Get Unicode non printable control chars
 control_range = list(range(0,32))+list(range(127,160))
@@ -63,7 +65,7 @@ class QemuRunner:
         self.boot_patterns = boot_patterns
         self.tmpfsdir = tmpfsdir
 
-        self.runqemutime = 120
+        self.runqemutime = 300
         if not workdir:
             workdir = os.getcwd()
         self.qemu_pidfile = workdir + '/pidfile_' + str(os.getpid())
@@ -121,7 +123,10 @@ class QemuRunner:
         import fcntl
         fl = fcntl.fcntl(o, fcntl.F_GETFL)
         fcntl.fcntl(o, fcntl.F_SETFL, fl | os.O_NONBLOCK)
-        return os.read(o.fileno(), 1000000).decode("utf-8")
+        try:
+            return os.read(o.fileno(), 1000000).decode("utf-8")
+        except BlockingIOError:
+            return ""
 
 
     def handleSIGCHLD(self, signum, frame):
@@ -174,6 +179,29 @@ class QemuRunner:
         return self.launch(launch_cmd, qemuparams=qemuparams, get_ip=get_ip, extra_bootparams=extra_bootparams, env=env)
 
     def launch(self, launch_cmd, get_ip = True, qemuparams = None, extra_bootparams = None, env = None):
+        # use logfile to determine the recipe-sysroot-native path and
+        # then add in the site-packages path components and add that
+        # to the python sys.path so qmp.py can be found.
+        python_path = os.path.dirname(os.path.dirname(self.logfile))
+        python_path += "/recipe-sysroot-native/usr/lib/python3.9/site-packages"
+        sys.path.append(python_path)
+        importlib.invalidate_caches()
+        try:
+            qmp = importlib.import_module("qmp")
+        except:
+            self.logger.error("qemurunner: qmp.py missing, please ensure it's installed")
+            return False
+        # Path relative to tmpdir used as cwd for qemu below to avoid unix socket path length issues
+        qmp_file = "." + next(tempfile._get_candidate_names())
+        qmp_param = ' -S -qmp unix:./%s,server,wait' % (qmp_file)
+        qmp_port = self.tmpdir + "/" + qmp_file
+        # Create a second socket connection for debugging use, 
+        # note this will NOT cause qemu to block waiting for the connection
+        qmp_file2 = "." + next(tempfile._get_candidate_names())
+        qmp_param += ' -qmp unix:./%s,server,nowait' % (qmp_file2)
+        qmp_port2 = self.tmpdir + "/" + qmp_file2
+        self.logger.info("QMP Available for connection at %s" % (qmp_port2))
+
         try:
             if self.serial_ports >= 2:
                 self.threadsock, threadport = self.create_socket()
@@ -190,7 +218,8 @@ class QemuRunner:
         # and analyze descendents in order to determine it.
         if os.path.exists(self.qemu_pidfile):
             os.remove(self.qemu_pidfile)
-        self.qemuparams = 'bootparams="{0}" qemuparams="-pidfile {1}"'.format(bootparams, self.qemu_pidfile)
+        self.qemuparams = 'bootparams="{0}" qemuparams="-pidfile {1} {2}"'.format(bootparams, self.qemu_pidfile, qmp_param)
+
         if qemuparams:
             self.qemuparams = self.qemuparams[:-1] + " " + qemuparams + " " + '\"'
 
@@ -208,8 +237,9 @@ class QemuRunner:
         # blocking at the end of the runqemu script when using this within
         # oe-selftest (this makes stty error out immediately). There ought
         # to be a proper fix but this will suffice for now.
-        self.runqemu = subprocess.Popen(launch_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, preexec_fn=os.setpgrp, env=env)
+        self.runqemu = subprocess.Popen(launch_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, preexec_fn=os.setpgrp, env=env, cwd=self.tmpdir)
         output = self.runqemu.stdout
+        launch_time = time.time()
 
         #
         # We need the preexec_fn above so that all runqemu processes can easily be killed
@@ -244,6 +274,7 @@ class QemuRunner:
         while not self.is_alive() and time.time() < endtime:
             if self.runqemu.poll():
                 if self.runqemu_exited:
+                    self.logger.warning("runqemu during is_alive() test")
                     return False
                 if self.runqemu.returncode:
                     # No point waiting any longer
@@ -255,7 +286,10 @@ class QemuRunner:
             time.sleep(0.5)
 
         if self.runqemu_exited:
-            return False
+            self.logger.warning("runqemu after timeout")
+
+        if self.runqemu.returncode:
+            self.logger.warning('runqemu exited with code %d' % self.runqemu.returncode)
 
         if not self.is_alive():
             self.logger.error("Qemu pid didn't appear in %s seconds (%s)" %
@@ -281,6 +315,72 @@ class QemuRunner:
             else:
                 self.logger.error("No output from runqemu.\n")
             return False
+
+        # Create the client socket for the QEMU Monitor Control Socket
+        # This will allow us to read status from Qemu if the the process
+        # is still alive
+        self.logger.debug("QMP Initializing to %s" % (qmp_port))
+        # chdir dance for path length issues with unix sockets
+        origpath = os.getcwd()
+        try:
+            os.chdir(os.path.dirname(qmp_port))
+            try:
+               self.qmp = qmp.QEMUMonitorProtocol(os.path.basename(qmp_port))
+            except OSError as msg:
+                self.logger.warning("Failed to initialize qemu monitor socket: %s File: %s" % (msg, msg.filename))
+                return False
+
+            self.logger.debug("QMP Connecting to %s" % (qmp_port))
+            if not os.path.exists(qmp_port) and self.is_alive():
+                self.logger.debug("QMP Port does not exist waiting for it to be created")
+                endtime = time.time() + self.runqemutime
+                while not os.path.exists(qmp_port) and self.is_alive() and time.time() < endtime:
+                   self.logger.info("QMP port does not exist yet!")
+                   time.sleep(0.5)
+                if not os.path.exists(qmp_port) and self.is_alive():
+                    self.logger.warning("QMP Port still does not exist but QEMU is alive")
+                    return False
+
+            try:
+                self.qmp.connect()
+                connect_time = time.time()
+                self.logger.info("QMP connected to QEMU at %s and took %s seconds" %
+                                  (time.strftime("%D %H:%M:%S"),
+                                   time.time() - launch_time))
+            except OSError as msg:
+                self.logger.warning("Failed to connect qemu monitor socket: %s File: %s" % (msg, msg.filename))
+                return False
+            except qmp.QMPConnectError as msg:
+                self.logger.warning("Failed to communicate with qemu monitor: %s" % (msg))
+                return False
+        finally:
+            os.chdir(origpath)
+
+        # We worry that mmap'd libraries may cause page faults which hang the qemu VM for periods
+        # causing failures. Before we "start" qemu, read through it's mapped files to try and 
+        # ensure we don't hit page faults later
+        mapdir = "/proc/" + str(self.qemupid) + "/map_files/"
+        try:
+            for f in os.listdir(mapdir):
+                try:
+                    linktarget = os.readlink(os.path.join(mapdir, f))
+                    if not linktarget.startswith("/") or linktarget.startswith("/dev") or "deleted" in linktarget:
+                        continue
+                    with open(linktarget, "rb") as readf:
+                        data = True
+                        while data:
+                            data = readf.read(4096)
+                except FileNotFoundError:
+                    continue
+        # Centos7 doesn't allow us to read /map_files/
+        except PermissionError:
+            pass
+
+        # Release the qemu process to continue running
+        self.run_monitor('cont')
+        self.logger.info("QMP released QEMU at %s and took %s seconds from connect" %
+                          (time.strftime("%D %H:%M:%S"),
+                           time.time() - connect_time))
 
         # We are alive: qemu is running
         out = self.getOutput(output)
@@ -382,7 +482,6 @@ class QemuRunner:
                         sock.close()
                         stopread = True
 
-
         if not reachedlogin:
             if time.time() >= endtime:
                 self.logger.warning("Target didn't reach login banner in %d seconds (%s)" %
@@ -439,10 +538,15 @@ class QemuRunner:
             if self.runqemu.poll() is None:
                 self.logger.debug("Sending SIGKILL to runqemu")
                 os.killpg(os.getpgid(self.runqemu.pid), signal.SIGKILL)
+            if not self.runqemu.stdout.closed:
+                self.logger.info("Output from runqemu:\n%s" % self.getOutput(self.runqemu.stdout))
             self.runqemu.stdin.close()
             self.runqemu.stdout.close()
             self.runqemu_exited = True
 
+        if hasattr(self, 'qmp') and self.qmp:
+            self.qmp.close()
+            self.qmp = None
         if hasattr(self, 'server_socket') and self.server_socket:
             self.server_socket.close()
             self.server_socket = None
@@ -505,6 +609,13 @@ class QemuRunner:
                         self.qemupid = int(qemu_pid)
                         return True
         return False
+
+    def run_monitor(self, command, args=None, timeout=60):
+        if hasattr(self, 'qmp') and self.qmp:
+            if args is not None:
+                return self.qmp.cmd(command, args)
+            else:
+                return self.qmp.cmd(command)
 
     def run_serial(self, command, raw=False, timeout=60):
         # We assume target system have echo to get command status

@@ -54,6 +54,7 @@ class Partition():
         self.uuid = args.uuid
         self.fsuuid = args.fsuuid
         self.type = args.type
+        self.no_fstab_update = args.no_fstab_update
         self.updated_fstab_path = None
         self.has_fstab = False
         self.update_fstab_in_rootfs = False
@@ -141,9 +142,9 @@ class Partition():
                                             native_sysroot)
                 self.source_file = "%s/fs.%s" % (cr_workdir, self.fstype)
             else:
-                if self.fstype == 'squashfs':
-                    raise WicError("It's not possible to create empty squashfs "
-                                   "partition '%s'" % (self.mountpoint))
+                if self.fstype in ('squashfs', 'erofs'):
+                    raise WicError("It's not possible to create empty %s "
+                                   "partition '%s'" % (self.fstype, self.mountpoint))
 
                 rootfs = "%s/fs_%s.%s.%s" % (cr_workdir, self.label,
                                              self.lineno, self.fstype)
@@ -286,7 +287,7 @@ class Partition():
             (self.fstype, extraopts, rootfs, label_str, self.fsuuid, rootfs_dir)
         exec_native_cmd(mkfs_cmd, native_sysroot, pseudo=pseudo)
 
-        if self.updated_fstab_path and self.has_fstab:
+        if self.updated_fstab_path and self.has_fstab and not self.no_fstab_update:
             debugfs_script_path = os.path.join(cr_workdir, "debugfs_script")
             with open(debugfs_script_path, "w") as f:
                 f.write("cd etc\n")
@@ -350,7 +351,7 @@ class Partition():
         mcopy_cmd = "mcopy -i %s -s %s/* ::/" % (rootfs, rootfs_dir)
         exec_native_cmd(mcopy_cmd, native_sysroot)
 
-        if self.updated_fstab_path and self.has_fstab:
+        if self.updated_fstab_path and self.has_fstab and not self.no_fstab_update:
             mcopy_cmd = "mcopy -i %s %s ::/etc/fstab" % (rootfs, self.updated_fstab_path)
             exec_native_cmd(mcopy_cmd, native_sysroot)
 
@@ -368,6 +369,16 @@ class Partition():
         squashfs_cmd = "mksquashfs %s %s %s" % \
                        (rootfs_dir, rootfs, extraopts)
         exec_native_cmd(squashfs_cmd, native_sysroot, pseudo=pseudo)
+
+    def prepare_rootfs_erofs(self, rootfs, cr_workdir, oe_builddir, rootfs_dir,
+                             native_sysroot, pseudo):
+        """
+        Prepare content for a erofs rootfs partition.
+        """
+        extraopts = self.mkfs_extraopts or ''
+        erofs_cmd = "mkfs.erofs %s -U %s %s %s" % \
+                       (extraopts, self.fsuuid, rootfs, rootfs_dir)
+        exec_native_cmd(erofs_cmd, native_sysroot, pseudo=pseudo)
 
     def prepare_empty_partition_ext(self, rootfs, oe_builddir,
                                     native_sysroot):

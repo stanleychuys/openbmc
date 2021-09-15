@@ -674,7 +674,7 @@ class FetcherLocalTest(FetcherTest):
         with self.assertRaises(bb.fetch2.UnpackError):
             self.fetchUnpack(['file://a;subdir=/bin/sh'])
 
-    def test_local_gitfetch_usehead(self):
+    def dummyGitTest(self, suffix):
         # Create dummy local Git repo
         src_dir = tempfile.mkdtemp(dir=self.tempdir,
                                    prefix='gitfetch_localusehead_')
@@ -693,7 +693,7 @@ class FetcherLocalTest(FetcherTest):
 
         # Fetch and check revision
         self.d.setVar("SRCREV", "AUTOINC")
-        url = "git://" + src_dir + ";protocol=file;usehead=1"
+        url = "git://" + src_dir + ";protocol=file;" + suffix
         fetcher = bb.fetch.Fetch([url], self.d)
         fetcher.download()
         fetcher.unpack(self.unpackdir)
@@ -701,34 +701,24 @@ class FetcherLocalTest(FetcherTest):
                                 cwd=os.path.join(self.unpackdir, 'git'))
         unpack_rev = stdout[0].strip()
         self.assertEqual(orig_rev, unpack_rev)
+
+    def test_local_gitfetch_usehead(self):
+        self.dummyGitTest("usehead=1")
 
     def test_local_gitfetch_usehead_withname(self):
-        # Create dummy local Git repo
-        src_dir = tempfile.mkdtemp(dir=self.tempdir,
-                                   prefix='gitfetch_localusehead_')
-        src_dir = os.path.abspath(src_dir)
-        bb.process.run("git init", cwd=src_dir)
-        bb.process.run("git config user.email 'you@example.com'", cwd=src_dir)
-        bb.process.run("git config user.name 'Your Name'", cwd=src_dir)
-        bb.process.run("git commit --allow-empty -m'Dummy commit'",
-                       cwd=src_dir)
-        # Use other branch than master
-        bb.process.run("git checkout -b my-devel", cwd=src_dir)
-        bb.process.run("git commit --allow-empty -m'Dummy commit 2'",
-                       cwd=src_dir)
-        stdout = bb.process.run("git rev-parse HEAD", cwd=src_dir)
-        orig_rev = stdout[0].strip()
+        self.dummyGitTest("usehead=1;name=newName")
 
-        # Fetch and check revision
-        self.d.setVar("SRCREV", "AUTOINC")
-        url = "git://" + src_dir + ";protocol=file;usehead=1;name=newName"
-        fetcher = bb.fetch.Fetch([url], self.d)
-        fetcher.download()
-        fetcher.unpack(self.unpackdir)
-        stdout = bb.process.run("git rev-parse HEAD",
-                                cwd=os.path.join(self.unpackdir, 'git'))
-        unpack_rev = stdout[0].strip()
-        self.assertEqual(orig_rev, unpack_rev)
+    def test_local_gitfetch_shared(self):
+        self.dummyGitTest("usehead=1;name=sharedName")
+        alt = os.path.join(self.unpackdir, 'git/.git/objects/info/alternates')
+        self.assertTrue(os.path.exists(alt))
+
+    def test_local_gitfetch_noshared(self):
+        self.d.setVar('BB_GIT_NOSHARED', '1')
+        self.unpackdir += '_noshared'
+        self.dummyGitTest("usehead=1;name=noSharedName")
+        alt = os.path.join(self.unpackdir, 'git/.git/objects/info/alternates')
+        self.assertFalse(os.path.exists(alt))
 
 class FetcherNoNetworkTest(FetcherTest):
     def setUp(self):
@@ -1808,7 +1798,7 @@ class GitShallowTest(FetcherTest):
 
         # Set up the mirror
         mirrordir = os.path.join(self.tempdir, 'mirror')
-        os.rename(self.dldir, mirrordir)
+        bb.utils.rename(self.dldir, mirrordir)
         self.d.setVar('PREMIRRORS', 'gitsm://.*/.* file://%s/\n' % mirrordir)
 
         # Fetch from the mirror
@@ -1926,7 +1916,7 @@ class GitShallowTest(FetcherTest):
         bb.utils.mkdirhier(mirrordir)
         self.d.setVar('PREMIRRORS', 'git://.*/.* file://%s/\n' % mirrordir)
 
-        os.rename(os.path.join(self.dldir, mirrortarball),
+        bb.utils.rename(os.path.join(self.dldir, mirrortarball),
                   os.path.join(mirrordir, mirrortarball))
 
         # Fetch from the mirror
@@ -2650,3 +2640,29 @@ class NPMTest(FetcherTest):
         fetcher = bb.fetch.Fetch(['npmsw://' + swfile], self.d)
         fetcher.download()
         self.assertTrue(os.path.exists(ud.localpath))
+
+class GitSharedTest(FetcherTest):
+    def setUp(self):
+        super(GitSharedTest, self).setUp()
+        self.recipe_url = "git://git.openembedded.org/bitbake"
+        self.d.setVar('SRCREV', '82ea737a0b42a8b53e11c9cde141e9e9c0bd8c40')
+
+    @skipIfNoNetwork()
+    def test_shared_unpack(self):
+        fetcher = bb.fetch.Fetch([self.recipe_url], self.d)
+
+        fetcher.download()
+        fetcher.unpack(self.unpackdir)
+        alt = os.path.join(self.unpackdir, 'git/.git/objects/info/alternates')
+        self.assertTrue(os.path.exists(alt))
+
+    @skipIfNoNetwork()
+    def test_noshared_unpack(self):
+        self.d.setVar('BB_GIT_NOSHARED', '1')
+        self.unpackdir += '_noshared'
+        fetcher = bb.fetch.Fetch([self.recipe_url], self.d)
+
+        fetcher.download()
+        fetcher.unpack(self.unpackdir)
+        alt = os.path.join(self.unpackdir, 'git/.git/objects/info/alternates')
+        self.assertFalse(os.path.exists(alt))

@@ -1,15 +1,8 @@
 inherit entity-utils
-SRC_URI_remove_olympus-nuvoton = "git://github.com/openbmc/phosphor-host-ipmid"
-SRC_URI_prepend_olympus-nuvoton = "git://github.com/Nuvoton-Israel/phosphor-host-ipmid"
-
-SRCREV := "3f553e155500938a51a06173633c51be87ec463a"
-
-FILESEXTRAPATHS_append_olympus-nuvoton := "${THISDIR}/${PN}:"
-
-DEPENDS_append_olympus-nuvoton = " \
+DEPENDS:append:olympus-nuvoton = "\
     ${@entity_enabled(d, '', 'olympus-nuvoton-yaml-config')}"
 
-EXTRA_OECONF_olympus-nuvoton = " \
+EXTRA_OECONF:olympus-nuvoton = " \
     --with-journal-sel \
     --enable-boot-flag-safe-mode-support \
     ${@entity_enabled(d, '', 'SENSOR_YAML_GEN=${STAGING_DIR_HOST}${datadir}/olympus-nuvoton-yaml-config/ipmi-sensors.yaml')} \
