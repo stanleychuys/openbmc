@@ -13,7 +13,7 @@ PV = "1.0+git${SRCPV}"
 
 inherit cmake
 
-FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
 DEPENDS += " \
     gtest \

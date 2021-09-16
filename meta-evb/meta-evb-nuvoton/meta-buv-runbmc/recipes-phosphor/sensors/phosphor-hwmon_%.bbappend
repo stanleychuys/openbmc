@@ -1,4 +1,4 @@
-FILESEXTRAPATHS_prepend_buv-runbmc := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:prepend:buv-runbmc := "${THISDIR}/${PN}:"
 
 
 NAMES = " \

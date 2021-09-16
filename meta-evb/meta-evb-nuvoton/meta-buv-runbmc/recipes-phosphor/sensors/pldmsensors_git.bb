@@ -19,11 +19,9 @@ S = "${WORKDIR}/git"
 
 EXTRA_OECMAKE = "-DYOCTO=1"
 
-FILESEXTRAPATHS_prepend_buv-runbmc := "${THISDIR}/${PN}:"
-
 SRC_URI += "file://pldm.json "
 
-do_install_append() {
+do_install:append() {
     install -d ${D}${sysconfdir}/default
     install -m 0644 ${WORKDIR}/pldm.json ${D}${sysconfdir}/default
 }

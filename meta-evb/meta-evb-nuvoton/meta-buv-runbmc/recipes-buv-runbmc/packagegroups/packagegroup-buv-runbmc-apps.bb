@@ -13,22 +13,22 @@ PACKAGES = " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'buv-dev', '${PN}-dev', '', d)} \
     "
 
-RPROVIDES_${PN}-chassis += "virtual-obmc-chassis-mgmt"
-RPROVIDES_${PN}-fans += "virtual-obmc-fan-mgmt"
-RPROVIDES_${PN}-system = "virtual-obmc-system-mgmt"
+RPROVIDES:${PN}-chassis += "virtual-obmc-chassis-mgmt"
+RPROVIDES:${PN}-fans += "virtual-obmc-fan-mgmt"
+RPROVIDES:${PN}-system = "virtual-obmc-system-mgmt"
 
-SUMMARY_${PN}-chassis = "BUV RunBMC Chassis"
-RDEPENDS_${PN}-chassis = " \
+SUMMARY:${PN}-chassis = "BUV RunBMC Chassis"
+RDEPENDS:${PN}-chassis = " \
     x86-power-control \
     "
 
-SUMMARY_${PN}-fans = "BUV RunBMC Fans"
-RDEPENDS_${PN}-fans = " \
+SUMMARY:${PN}-fans = "BUV RunBMC Fans"
+RDEPENDS:${PN}-fans = " \
     phosphor-pid-control \
     "
 
-SUMMARY_${PN}-system = "BUV RunBMC System"
-RDEPENDS_${PN}-system = " \
+SUMMARY:${PN}-system = "BUV RunBMC System"
+RDEPENDS:${PN}-system = " \
     ipmitool \
     webui-vue \
     phosphor-host-postd \
@@ -46,13 +46,13 @@ RDEPENDS_${PN}-system = " \
     loadmcu \
     "
 
-SUMMARY_${PN}-entity = "BUV RunBMC entity"
-RDEPENDS_${PN}-entity = " \
+SUMMARY:${PN}-entity = "BUV RunBMC entity"
+RDEPENDS:${PN}-entity = " \
     intel-ipmi-oem \
     "
 
-SUMMARY_${PN}-dev = "BUV RunBMC development tools"
-RDEPENDS_${PN}-dev = " \
+SUMMARY:${PN}-dev = "BUV RunBMC development tools"
+RDEPENDS:${PN}-dev = " \
     ent \
     dhrystone \
     rw-perf \

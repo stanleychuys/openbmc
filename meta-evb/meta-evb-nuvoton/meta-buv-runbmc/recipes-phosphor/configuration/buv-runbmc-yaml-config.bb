@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/Apache-2.0;md5
 
 inherit allarch
 
-SRC_URI_buv-runbmc = " \
+SRC_URI:buv-runbmc = " \
     file://buv-runbmc-ipmi-fru.yaml \
     file://buv-runbmc-ipmi-fru-properties.yaml \
     file://buv-runbmc-ipmi-sensors.yaml \
@@ -13,7 +13,7 @@ SRC_URI_buv-runbmc = " \
 
 S = "${WORKDIR}"
 
-do_install_buv-runbmc() {
+do_install:buv-runbmc() {
     install -m 0644 -D buv-runbmc-ipmi-fru-properties.yaml \
         ${D}${datadir}/${BPN}/ipmi-extra-properties.yaml
     install -m 0644 -D buv-runbmc-ipmi-fru.yaml \
@@ -22,10 +22,10 @@ do_install_buv-runbmc() {
         ${D}${datadir}/${BPN}/ipmi-sensors.yaml
 }
 
-FILES_${PN}-dev = " \
+FILES:${PN}-dev = " \
     ${datadir}/${BPN}/ipmi-extra-properties.yaml \
     ${datadir}/${BPN}/ipmi-fru-read.yaml \
     ${datadir}/${BPN}/ipmi-sensors.yaml \
     "
 
-ALLOW_EMPTY_${PN} = "1"
+ALLOW_EMPTY:${PN} = "1"

@@ -1,13 +1,13 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
 inherit image_version
 
-SRC_URI_append_olympus-nuvoton = " file://channel_config.json"
-SRC_URI_append_olympus-nuvoton = " file://dev_id.json"
-SRC_URI_append_olympus-nuvoton = " file://power_reading.json"
-SRC_URI_append_olympus-nuvoton = " file://dcmi_sensors.json"
+SRC_URI:append:olympus-nuvoton = " file://channel_config.json"
+SRC_URI:append:olympus-nuvoton = " file://dev_id.json"
+SRC_URI:append:olympus-nuvoton = " file://power_reading.json"
+SRC_URI:append:olympus-nuvoton = " file://dcmi_sensors.json"
 
-do_install_append_olympus-nuvoton() {
+do_install:append:olympus-nuvoton() {
     install -m 0644 -D ${WORKDIR}/channel_config.json \
         ${D}${datadir}/ipmi-providers/channel_config.json
     install -m 0644 -D ${WORKDIR}/dev_id.json \

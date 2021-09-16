@@ -20,9 +20,9 @@ S = "${WORKDIR}/git"
 SRC_URI = "git://github.com/Nuvoton-Israel/nuvoton-ipmi-oem"
 SRCREV = "fe6a355c1e8ac1eb334a40e11ae0e9ff52eda062"
 
-FILES_${PN}_append = " ${libdir}/ipmid-providers/lib*${SOLIBS}"
-FILES_${PN}_append = " ${libdir}/host-ipmid/lib*${SOLIBS}"
-FILES_${PN}_append = " ${libdir}/net-ipmid/lib*${SOLIBS}"
-FILES_${PN}-dev_append = " ${libdir}/ipmid-providers/lib*${SOLIBSDEV} ${libdir}/ipmid-providers/*.la"
+FILES:${PN}:append = " ${libdir}/ipmid-providers/lib*${SOLIBS}"
+FILES:${PN}:append = " ${libdir}/host-ipmid/lib*${SOLIBS}"
+FILES:${PN}:append = " ${libdir}/net-ipmid/lib*${SOLIBS}"
+FILES:${PN}-dev:append = " ${libdir}/ipmid-providers/lib*${SOLIBSDEV} ${libdir}/ipmid-providers/*.la"
 
 HOSTIPMI_PROVIDER_LIBRARY += "libnuvoemcmds.so"

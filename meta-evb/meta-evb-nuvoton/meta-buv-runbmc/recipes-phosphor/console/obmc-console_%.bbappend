@@ -1,8 +1,8 @@
-FILESEXTRAPATHS_prepend_buv-runbmc := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:prepend:buv-runbmc := "${THISDIR}/${PN}:"
 
-SRC_URI_append_buv-runbmc = " file://80-buv-runbmc-sol.rules"
+SRC_URI:append:buv-runbmc = " file://80-buv-runbmc-sol.rules"
 
-do_install_append_buv-runbmc() {
+do_install:append:buv-runbmc() {
         install -m 0755 -d ${D}${sysconfdir}/${BPN}
         rm -f ${D}${sysconfdir}/${BPN}/server.ttyVUART0.conf
         install -m 0644 ${WORKDIR}/${BPN}.conf ${D}${sysconfdir}/

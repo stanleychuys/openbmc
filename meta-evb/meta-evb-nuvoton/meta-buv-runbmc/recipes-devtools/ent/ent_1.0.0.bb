@@ -9,7 +9,7 @@ SRC_URI = "file://ent.tar.bz2"
 
 S = "${WORKDIR}/${PN}"
 EXTRA_OEMAKE = "CROSS_COMPILE=${TARGET_PREFIX} CC="${CC}""
-INSANE_SKIP_${PN} += "ldflags"
+INSANE_SKIP:${PN} += "ldflags"
 
 do_install () {
 	install -d ${D}${bindir}/

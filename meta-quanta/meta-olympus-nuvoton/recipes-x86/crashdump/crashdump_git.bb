@@ -17,12 +17,12 @@ SRCREV = "wht-1.0.6"
 
 S = "${WORKDIR}/git"
 
-SYSTEMD_SERVICE_${PN} += "com.intel.crashdump.service"
-DBUS_SERVICE_${PN} += "com.intel.crashdump.service"
+SYSTEMD_SERVICE:${PN} += "com.intel.crashdump.service"
+DBUS_SERVICE:${PN} += "com.intel.crashdump.service"
 
 # linux-libc-headers guides this way to include custom uapi headers
-CFLAGS_append = " -I ${STAGING_KERNEL_DIR}/include/uapi"
-CFLAGS_append = " -I ${STAGING_KERNEL_DIR}/include"
-CXXFLAGS_append = " -I ${STAGING_KERNEL_DIR}/include/uapi"
-CXXFLAGS_append = " -I ${STAGING_KERNEL_DIR}/include"
+CFLAGS:append = " -I ${STAGING_KERNEL_DIR}/include/uapi"
+CFLAGS:append = " -I ${STAGING_KERNEL_DIR}/include"
+CXXFLAGS:append = " -I ${STAGING_KERNEL_DIR}/include/uapi"
+CXXFLAGS:append = " -I ${STAGING_KERNEL_DIR}/include"
 do_configure[depends] += "virtual/kernel:do_shared_workdir"
