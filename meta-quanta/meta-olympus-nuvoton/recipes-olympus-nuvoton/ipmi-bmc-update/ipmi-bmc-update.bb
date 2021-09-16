@@ -10,11 +10,11 @@ SRC_URI = " file://phosphor-ipmi-flash-bmc-verify.service \
             file://config-bmc.json \
           "
 
-FILES_${PN} += "${datadir}/phosphor-ipmi-flash/config-bmc.json"
+FILES:${PN} += "${datadir}/phosphor-ipmi-flash/config-bmc.json"
 
 DEPENDS += "systemd"
 DEPENDS += "phosphor-ipmi-flash"
-RDEPENDS_${PN} = "bash"
+RDEPENDS:${PN} = "bash"
 
 do_install() {
     install -d ${D}${bindir}
@@ -29,4 +29,4 @@ do_install() {
 
 
 SYSTEMD_PACKAGES = "${PN}"
-SYSTEMD_SERVICE_${PN} = "phosphor-ipmi-flash-bmc-verify.service"
+SYSTEMD_SERVICE:${PN} = "phosphor-ipmi-flash-bmc-verify.service"

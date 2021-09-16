@@ -199,7 +199,7 @@ def check_toolchain_tune_args(data, tune, multilib, errs):
 
 def check_toolchain_args_present(data, tune, multilib, tune_errors, which):
     args_set = (data.getVar("TUNE_%s" % which) or "").split()
-    args_wanted = (data.getVar("TUNEABI_REQUIRED_%s_tune-%s" % (which, tune)) or "").split()
+    args_wanted = (data.getVar("TUNEABI_REQUIRED_%s:tune-%s" % (which, tune)) or "").split()
     args_missing = []
 
     # If no args are listed/required, we are done.
@@ -227,7 +227,7 @@ def check_toolchain_tune(data, tune, multilib):
         overrides = localdata.getVar("OVERRIDES", False) + ":virtclass-multilib-" + multilib
         localdata.setVar("OVERRIDES", overrides)
     bb.debug(2, "Sanity-checking tuning '%s' (%s) features:" % (tune, multilib))
-    features = (localdata.getVar("TUNE_FEATURES_tune-%s" % tune) or "").split()
+    features = (localdata.getVar("TUNE_FEATURES:tune-%s" % tune) or "").split()
     if not features:
         return "Tuning '%s' has no defined features, and cannot be used." % tune
     valid_tunes = localdata.getVarFlags('TUNEVALID') or {}
@@ -249,7 +249,7 @@ def check_toolchain_tune(data, tune, multilib):
             tune_errors.append("Feature '%s' is not defined." % feature)
     whitelist = localdata.getVar("TUNEABI_WHITELIST")
     if whitelist:
-        tuneabi = localdata.getVar("TUNEABI_tune-%s" % tune)
+        tuneabi = localdata.getVar("TUNEABI:tune-%s" % tune)
         if not tuneabi:
             tuneabi = tune
         if True not in [x in whitelist.split() for x in tuneabi.split()]:
@@ -281,7 +281,7 @@ def check_toolchain(data):
                 seen_libs.append(lib)
             if not lib in global_multilibs:
                 tune_error_set.append("Multilib %s is not present in MULTILIB_GLOBAL_VARIANTS" % lib)
-            tune = data.getVar("DEFAULTTUNE_virtclass-multilib-%s" % lib)
+            tune = data.getVar("DEFAULTTUNE:virtclass-multilib-%s" % lib)
             if tune in seen_tunes:
                 tune_error_set.append("The tuning '%s' appears in more than one multilib." % tune)
             else:
@@ -885,15 +885,18 @@ def check_sanity_everybuild(status, d):
         except:
             pass
 
-    oeroot = d.getVar('COREBASE')
-    if oeroot.find('+') != -1:
-        status.addresult("Error, you have an invalid character (+) in your COREBASE directory path. Please move the installation to a directory which doesn't include any + characters.")
-    if oeroot.find('@') != -1:
-        status.addresult("Error, you have an invalid character (@) in your COREBASE directory path. Please move the installation to a directory which doesn't include any @ characters.")
-    if oeroot.find('%') != -1:
-        status.addresult("Error, you have an invalid character (%) in your COREBASE directory path which causes problems with python string formatting. Please move the installation to a directory which doesn't include any % characters.") 
-    if oeroot.find(' ') != -1:
-        status.addresult("Error, you have a space in your COREBASE directory path. Please move the installation to a directory which doesn't include a space since autotools doesn't support this.")
+    for checkdir in ['COREBASE', 'TMPDIR']:
+        val = d.getVar(checkdir)
+        if val.find('..') != -1:
+            status.addresult("Error, you have '..' in your %s directory path. Please ensure the variable contains an absolute path as this can break some recipe builds in obtuse ways." % checkdir)
+        if val.find('+') != -1:
+            status.addresult("Error, you have an invalid character (+) in your %s directory path. Please move the installation to a directory which doesn't include any + characters." % checkdir)
+        if val.find('@') != -1:
+            status.addresult("Error, you have an invalid character (@) in your %s directory path. Please move the installation to a directory which doesn't include any @ characters." % checkdir)
+        if val.find(' ') != -1:
+            status.addresult("Error, you have a space in your %s directory path. Please move the installation to a directory which doesn't include a space since autotools doesn't support this." % checkdir)
+        if val.find('%') != -1:
+            status.addresult("Error, you have an invalid character (%) in your %s directory path which causes problems with python string formatting. Please move the installation to a directory which doesn't include any % characters." % checkdir)
 
     # Check the format of MIRRORS, PREMIRRORS and SSTATE_MIRRORS
     import re

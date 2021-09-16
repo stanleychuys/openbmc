@@ -1,0 +1,75 @@
+From b536a58f20727c9256dde9cb952916e483be8b0f Mon Sep 17 00:00:00 2001
+From: Joseph Liu <kwliu@nuvoton.com>
+Date: Mon, 30 Aug 2021 21:39:21 +0800
+Subject: [PATCH] driver: udc: nuvoton: usb8 to usbphy3
+
+Signed-off-by: Joseph Liu <kwliu@nuvoton.com>
+---
+ arch/arm64/boot/dts/nuvoton/nuvoton-npcm845.dtsi |  2 ++
+ drivers/usb/gadget/udc/npcm_udc.c                | 16 +++++++++++++++-
+ 2 files changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845.dtsi b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845.dtsi
+index 2c3149c45b00..6762d6a29fe5 100644
+--- a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845.dtsi
++++ b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845.dtsi
+@@ -149,6 +149,7 @@ udc8:udc@f0838000 {
+ 			       0x0 0xfffb4000 0x0 0x800>;
+ 			interrupts = <GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&clk NPCM8XX_CLK_SU>;
++			syscon = <&gcr>;
+ 			clock-names = "clk_usb_bridge";
+ 		};
+ 
+@@ -158,6 +159,7 @@ udc9:udc@f0839000 {
+ 			       0x0 0xfffb4800 0x0 0x800>;
+ 			interrupts = <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&clk NPCM8XX_CLK_SU>;
++			syscon = <&gcr>;
+ 			clock-names = "clk_usb_bridge";
+ 			status = "disable";
+ 		};
+diff --git a/drivers/usb/gadget/udc/npcm_udc.c b/drivers/usb/gadget/udc/npcm_udc.c
+index 6d9198dfab28..fcb487478940 100644
+--- a/drivers/usb/gadget/udc/npcm_udc.c
++++ b/drivers/usb/gadget/udc/npcm_udc.c
+@@ -42,6 +42,7 @@ static struct regmap *gcr_regmap;
+ 
+ #define  INTCR3_OFFSET 0x9C
+ #define  NPCM_INTCR3_USBPHYSW	GENMASK(13, 12)
++#define  NPCM_INTCR3_USBPHY3SW	GENMASK(15, 14)
+ 
+ #include "npcm_udc.h"
+ 
+@@ -2766,7 +2767,7 @@ static int npcm_udc_probe(struct platform_device *pdev)
+ 
+ 	if (udc_controller->id == 9) {
+ 		if (gcr_regmap == NULL) {
+-			gcr_regmap = syscon_regmap_lookup_by_compatible("nuvoton,npcm750-gcr");
++			gcr_regmap = syscon_regmap_lookup_by_phandle(dev->of_node, "syscon");
+ 			if (IS_ERR(gcr_regmap)) {
+ 				pr_err("%s: failed to find nuvoton,npcm750-gcr\n", __func__);
+ 				return IS_ERR(gcr_regmap);
+@@ -2776,6 +2777,19 @@ static int npcm_udc_probe(struct platform_device *pdev)
+ 				   NPCM_INTCR3_USBPHYSW, NPCM_INTCR3_USBPHYSW);
+ 	}
+ 
++
++	if (udc_controller->id == 8) {
++		if (gcr_regmap == NULL) {
++			gcr_regmap = syscon_regmap_lookup_by_phandle(dev->of_node, "syscon");
++			if (IS_ERR(gcr_regmap)) {
++				pr_err("%s: failed to find nuvoton,npcm750-gcr\n", __func__);
++				return IS_ERR(gcr_regmap);
++		    }
++		}
++		regmap_update_bits(gcr_regmap, INTCR3_OFFSET,
++				   NPCM_INTCR3_USBPHY3SW, NPCM_INTCR3_USBPHY3SW);
++	}
++
+ 	/* Initialize the udc structure including QH member and other member */
+ 	if (struct_udc_setup(udc_controller, pdev)) {
+ 		NPCM_USB_ERR("Can't initialize udc data structure\n");
+-- 
+2.25.1
+

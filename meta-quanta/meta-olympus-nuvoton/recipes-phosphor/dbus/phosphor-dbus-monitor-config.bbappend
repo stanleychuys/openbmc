@@ -1,1 +1,1 @@
-PHOSPHOR_DBUS_MONITOR_CONFIGS_append_olympus-nuvoton = " olympus-nuvoton-yaml-config"
+PHOSPHOR_DBUS_MONITOR_CONFIGS:append:olympus-nuvoton = " olympus-nuvoton-yaml-config"

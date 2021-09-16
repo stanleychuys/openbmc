@@ -1,7 +1,7 @@
 # Helper function for check buv-entity distro
 
 # Usage example:
-# EXTRA_OECONF_append = " \
+# EXTRA_OECONF:append = " \
 #    ${@entity_enabled(d, '--enable-configure-dbus=yes')}"
 
 def distro_enabled(d, distro, truevalue, falsevalue=""):

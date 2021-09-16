@@ -11,28 +11,30 @@ SRC_URI += " \
   file://gbmc-ncsi-sslh.service \
   file://gbmc-ncsi-nft.sh.in \
   file://gbmc-ncsi-br-pub-addr.sh.in \
+  file://gbmc-ncsi-set-nicenabled.service.in \
   "
 
 S = "${WORKDIR}"
 
-RDEPENDS_${PN} += " \
+RDEPENDS:${PN} += " \
   gbmc-ip-monitor \
   ncsid \
   nftables-systemd \
   sslh \
   "
 
-FILES_${PN} += " \
+FILES:${PN} += " \
   ${datadir}/gbmc-ip-monitor \
   ${systemd_unitdir} \
   "
 
-SYSTEMD_SERVICE_${PN} += " \
+SYSTEMD_SERVICE:${PN} += " \
   gbmc-ncsi-sslh.service \
   gbmc-ncsi-sslh.socket \
+  gbmc-ncsi-set-nicenabled.service \
   "
 
-do_install_append() {
+do_install:append() {
   if_name='${GBMC_NCSI_IF_NAME}'
   if [ -z "$if_name" ]; then
     echo "Missing if_name" >&2
@@ -75,4 +77,7 @@ do_install_append() {
   sed "s,@NCSI_IF@,$if_name,g" ${WORKDIR}/gbmc-ncsi-br-pub-addr.sh.in \
     >${WORKDIR}/gbmc-ncsi-br-pub-addr.sh
   install -m644 ${WORKDIR}/gbmc-ncsi-br-pub-addr.sh $mondir
+
+  sed "s,@NCSI_IF@,$if_name,g" ${WORKDIR}/gbmc-ncsi-set-nicenabled.service.in \
+    >${D}${systemd_system_unitdir}/gbmc-ncsi-set-nicenabled.service
 }

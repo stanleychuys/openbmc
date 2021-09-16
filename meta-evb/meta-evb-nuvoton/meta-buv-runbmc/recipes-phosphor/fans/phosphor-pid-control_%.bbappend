@@ -1,26 +1,26 @@
-FILESEXTRAPATHS_prepend_buv-runbmc := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:prepend:buv-runbmc := "${THISDIR}/${PN}:"
 
 inherit buv-entity-utils
-SRC_URI_append_buv-runbmc = " file://config-buv-nuvoton.json"
-SRC_URI_append_buv-runbmc = " \
+SRC_URI:append:buv-runbmc = " file://config-buv-nuvoton.json"
+SRC_URI:append:buv-runbmc = " \
     file://fan-default-speed.sh \
     file://fan-reboot-control.service \
     file://fan-boot-control.service \
     "
-SRC_URI_append_buv-runbmc = " \
+SRC_URI:append:buv-runbmc = " \
     ${@entity_enabled(d, '', 'file://phosphor-pid-control_buv.service')}"
 
-FILES_${PN}_append_buv-runbmc = " ${bindir}/fan-default-speed.sh"
-FILES_${PN}_append_buv-runbmc = " \
+FILES:${PN}:append:buv-runbmc = " ${bindir}/fan-default-speed.sh"
+FILES:${PN}:append:buv-runbmc = " \
     ${@entity_enabled(d, '', '${datadir}/swampd/config.json')}"
 
-RDEPENDS_${PN} += "bash"
+RDEPENDS:${PN} += "bash"
 
-SYSTEMD_SERVICE_${PN}_append_buv-runbmc = " fan-reboot-control.service"
-SYSTEMD_SERVICE_${PN}_append_buv-runbmc = " fan-boot-control.service"
+SYSTEMD_SERVICE:${PN}:append:buv-runbmc = " fan-reboot-control.service"
+SYSTEMD_SERVICE:${PN}:append:buv-runbmc = " fan-boot-control.service"
 # default recipe already include phosphor-pid-control.service
 
-do_install_append_buv-runbmc() {
+do_install:append:buv-runbmc() {
     install -d ${D}/${bindir}
     install -m 0755 ${WORKDIR}/fan-default-speed.sh ${D}/${bindir}
 
@@ -41,5 +41,5 @@ do_install_append_buv-runbmc() {
         ${D}${systemd_unitdir}/system
 }
 
-EXTRA_OECONF_append_buv-runbmc = " \
+EXTRA_OECONF:append:buv-runbmc = " \
     ${@entity_enabled(d, '--enable-configure-dbus=yes')}"

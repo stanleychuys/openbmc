@@ -1,4 +1,4 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}:"
+FILESEXTRAPATHS:prepend := "${THISDIR}:"
 DESCRIPTION = "BMC Reboot Cause"
 PR = "r1"
 
@@ -9,14 +9,14 @@ inherit systemd
 inherit obmc-phosphor-systemd
 
 DEPENDS += "systemd"
-RDEPENDS_${PN} += "bash"
+RDEPENDS:${PN} += "bash"
 
 SRC_URI += " file://bmc-reboot-cause.service \
              file://reboot-cause.sh \
            "
 
 SYSTEMD_PACKAGES = "${PN}"
-SYSTEMD_SERVICE_${PN} = "bmc-reboot-cause.service"
+SYSTEMD_SERVICE:${PN} = "bmc-reboot-cause.service"
 
 do_install() {
     install -d ${D}${bindir}

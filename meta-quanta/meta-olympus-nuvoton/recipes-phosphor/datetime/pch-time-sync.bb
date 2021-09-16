@@ -13,7 +13,7 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/Apache-2.0;md5
 
 S = "${WORKDIR}"
 
-SYSTEMD_SERVICE_${PN} = "pch-time-sync.service"
+SYSTEMD_SERVICE:${PN} = "pch-time-sync.service"
 
 inherit cmake
 inherit obmc-phosphor-systemd

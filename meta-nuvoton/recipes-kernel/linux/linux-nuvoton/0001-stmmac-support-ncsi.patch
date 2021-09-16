@@ -1,0 +1,286 @@
+From eb396a4a632b372f5e6032930f126b6dbfdf6de7 Mon Sep 17 00:00:00 2001
+From: Joseph Liu <kwliu@nuvoton.com>
+Date: Thu, 9 Sep 2021 17:25:03 +0800
+Subject: [PATCH] stmmac: support ncsi
+
+Signed-off-by: Joseph Liu <kwliu@nuvoton.com>
+---
+ .../boot/dts/nuvoton/nuvoton-npcm845-evb.dts  |   5 +-
+ drivers/net/ethernet/stmicro/stmmac/stmmac.h  |   2 +
+ .../net/ethernet/stmicro/stmmac/stmmac_main.c | 131 ++++++++++++------
+ .../ethernet/stmicro/stmmac/stmmac_platform.c |   5 +
+ include/linux/stmmac.h                        |   1 +
+ 5 files changed, 103 insertions(+), 41 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts
+index a9b077208061..5ac903d89310 100644
+--- a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts
++++ b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts
+@@ -158,11 +158,12 @@ phy0: ethernet-phy@1 {
+ 		};
+ 
+ 		gmac2: eth@f0806000 {
+-			phy-mode = "rmii";
++			use-ncsi;
++			snps,eee-force-disable;
+ 			pinctrl-names = "default";
++			snps,ps-speed = <100>;
+ 			pinctrl-0 = <&r1_pins
+ 					&r1oen_pins>;
+-			phy-handle = <&phy0>;
+ 			status = "okay";
+ 		};
+ 
+diff --git a/drivers/net/ethernet/stmicro/stmmac/stmmac.h b/drivers/net/ethernet/stmicro/stmmac/stmmac.h
+index 727e68dfaf1c..8026eb490ab1 100644
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac.h
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac.h
+@@ -244,6 +244,8 @@ struct stmmac_priv {
+ 
+ 	/* Receive Side Scaling */
+ 	struct stmmac_rss rss;
++
++	struct ncsi_dev *ncsidev;
+ };
+ 
+ enum stmmac_state {
+diff --git a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+index 31e774087ba8..a477429c0577 100644
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+@@ -45,6 +45,7 @@
+ #include "dwmac1000.h"
+ #include "dwxgmac2.h"
+ #include "hwif.h"
++#include <net/ncsi.h>
+ 
+ #define	STMMAC_ALIGN(x)		ALIGN(ALIGN(x, SMP_CACHE_BYTES), 16)
+ #define	TSO_MAX_BUFF_SIZE	(SZ_16K - 1)
+@@ -2757,6 +2758,15 @@ static void stmmac_hw_teardown(struct net_device *dev)
+ 	clk_disable_unprepare(priv->plat->clk_ptp_ref);
+ }
+ 
++static void stmmac_ncsi_handler(struct ncsi_dev *nd)
++{
++	if (unlikely(nd->state != ncsi_dev_state_functional))
++		return;
++
++	netdev_info(nd->dev, "NCSI interface %s\n",
++		    nd->link_up ? "up" : "down");
++}
++
+ /**
+  *  stmmac_open - open entry point of the driver
+  *  @dev : pointer to the device structure.
+@@ -2773,16 +2783,26 @@ static int stmmac_open(struct net_device *dev)
+ 	u32 chan;
+ 	int ret;
+ 
+-	if (priv->hw->pcs != STMMAC_PCS_TBI &&
+-	    priv->hw->pcs != STMMAC_PCS_RTBI &&
+-	    priv->hw->xpcs == NULL) {
+-		ret = stmmac_init_phy(dev);
+-		if (ret) {
+-			netdev_err(priv->dev,
+-				   "%s: Cannot attach to PHY (error: %d)\n",
+-				   __func__, ret);
+-			return ret;
++	if (!priv->plat->use_ncsi) {
++		if (priv->hw->pcs != STMMAC_PCS_TBI &&
++			priv->hw->pcs != STMMAC_PCS_RTBI &&
++			priv->hw->xpcs == NULL) {
++			ret = stmmac_init_phy(dev);
++			if (ret) {
++				netdev_err(priv->dev,
++					"%s: Cannot attach to PHY (error: %d)\n",
++					__func__, ret);
++				return ret;
++			}
+ 		}
++	} else {
++		u32 ctrl;
++		stmmac_mac_flow_ctrl(priv, DUPLEX_FULL);
++		ctrl = readl(priv->ioaddr + MAC_CTRL_REG);
++		ctrl &= ~priv->hw->link.speed_mask;
++		ctrl |= priv->hw->link.speed100;
++		ctrl |= priv->hw->link.duplex;
++		writel(ctrl, priv->ioaddr + MAC_CTRL_REG);
+ 	}
+ 
+ 	/* Extra statistics */
+@@ -2838,9 +2858,11 @@ static int stmmac_open(struct net_device *dev)
+ 
+ 	stmmac_init_coalesce(priv);
+ 
+-	phylink_start(priv->phylink);
+-	/* We may have called phylink_speed_down before */
+-	phylink_speed_up(priv->phylink);
++	if (!priv->plat->use_ncsi) {
++		phylink_start(priv->phylink);
++		/* We may have called phylink_speed_down before */
++		phylink_speed_up(priv->phylink);
++	}
+ 
+ 	/* Request the IRQ lines */
+ 	ret = request_irq(dev->irq, stmmac_interrupt,
+@@ -2879,15 +2901,26 @@ static int stmmac_open(struct net_device *dev)
+ 	stmmac_enable_all_queues(priv);
+ 	netif_tx_start_all_queues(priv->dev);
+ 
+-	return 0;
++	/* Start the NCSI device */
++	if (priv->plat->use_ncsi) {
++		ret = ncsi_start_dev(priv->ncsidev);
++		if (ret) {
++			netdev_err(priv->dev, "ERROR: start the ncsi device(%d)\n",ret);
++			goto ncsi_error;
++		}
++	}
+ 
++	return 0;
++ncsi_error:
++	stmmac_disable_all_queues(priv);
+ lpiirq_error:
+ 	if (priv->wol_irq != dev->irq)
+ 		free_irq(priv->wol_irq, dev);
+ wolirq_error:
+ 	free_irq(dev->irq, dev);
+ irq_error:
+-	phylink_stop(priv->phylink);
++	if (!priv->plat->use_ncsi)
++		phylink_stop(priv->phylink);
+ 
+ 	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
+ 		del_timer_sync(&priv->tx_queue[chan].txtimer);
+@@ -2896,7 +2929,8 @@ static int stmmac_open(struct net_device *dev)
+ init_error:
+ 	free_dma_desc_resources(priv);
+ dma_desc_error:
+-	phylink_disconnect_phy(priv->phylink);
++	if (!priv->plat->use_ncsi)
++		phylink_disconnect_phy(priv->phylink);
+ 	return ret;
+ }
+ 
+@@ -2911,11 +2945,15 @@ static int stmmac_release(struct net_device *dev)
+ 	struct stmmac_priv *priv = netdev_priv(dev);
+ 	u32 chan;
+ 
+-	if (device_may_wakeup(priv->device))
+-		phylink_speed_down(priv->phylink, false);
+-	/* Stop and disconnect the PHY */
+-	phylink_stop(priv->phylink);
+-	phylink_disconnect_phy(priv->phylink);
++	if (priv->plat->use_ncsi) {
++		ncsi_stop_dev(priv->ncsidev);
++	} else {
++		if (device_may_wakeup(priv->device))
++			phylink_speed_down(priv->phylink, false);
++		/* Stop and disconnect the PHY */
++		phylink_stop(priv->phylink);
++		phylink_disconnect_phy(priv->phylink);
++	}
+ 
+ 	stmmac_disable_all_queues(priv);
+ 
+@@ -5047,23 +5085,36 @@ int stmmac_dvr_probe(struct device *device,
+ 
+ 	stmmac_check_pcs_mode(priv);
+ 
+-	if (priv->hw->pcs != STMMAC_PCS_TBI &&
+-	    priv->hw->pcs != STMMAC_PCS_RTBI) {
+-		/* MDIO bus Registration */
+-		ret = stmmac_mdio_register(ndev);
+-		if (ret < 0) {
+-			dev_err(priv->device,
+-				"%s: MDIO bus (id: %d) registration failed",
+-				__func__, priv->plat->bus_id);
+-			goto error_mdio_register;
++	if (!priv->plat->use_ncsi) {
++		if (priv->hw->pcs != STMMAC_PCS_TBI &&
++			priv->hw->pcs != STMMAC_PCS_RTBI) {
++			/* MDIO bus Registration */
++			ret = stmmac_mdio_register(ndev);
++			if (ret < 0) {
++				dev_err(priv->device,
++					"%s: MDIO bus (id: %d) registration failed",
++					__func__, priv->plat->bus_id);
++				goto error_mdio_register;
++			}
+ 		}
+-	}
+ 
+-	ret = stmmac_phy_setup(priv);
+-	if (ret) {
+-		netdev_err(ndev, "failed to setup phy (%d)\n", ret);
+-		goto error_phy_setup;
+-	}
++		ret = stmmac_phy_setup(priv);
++		if (ret) {
++			netdev_err(ndev, "failed to setup phy (%d)\n", ret);
++			goto error_phy_setup;
++		}
++	} else {
++		if (!IS_ENABLED(CONFIG_NET_NCSI)) {
++			netdev_err(priv->dev, "CONFIG_NET_NCSI not enabled\n");
++			goto error_phy_setup;
++		}
++		priv->ncsidev = ncsi_register_dev(priv->dev,
++						   stmmac_ncsi_handler);
++		if (!priv->ncsidev)
++			goto error_phy_setup;
++
++		netdev_info(ndev, "Using NCSI interface\n");
++	} 
+ 
+ 	ret = register_netdev(ndev);
+ 	if (ret) {
+@@ -5089,11 +5140,13 @@ int stmmac_dvr_probe(struct device *device,
+ error_serdes_powerup:
+ 	unregister_netdev(ndev);
+ error_netdev_register:
+-	phylink_destroy(priv->phylink);
++	if (!priv->plat->use_ncsi)
++		phylink_destroy(priv->phylink);
+ error_phy_setup:
+-	if (priv->hw->pcs != STMMAC_PCS_TBI &&
+-	    priv->hw->pcs != STMMAC_PCS_RTBI)
+-		stmmac_mdio_unregister(ndev);
++	if (!priv->plat->use_ncsi)
++		if (priv->hw->pcs != STMMAC_PCS_TBI &&
++			priv->hw->pcs != STMMAC_PCS_RTBI)
++			stmmac_mdio_unregister(ndev);
+ error_mdio_register:
+ 	stmmac_napi_del(ndev);
+ error_hw_init:
+diff --git a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
+index e87b832d1bed..8e8f3203d83d 100644
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
+@@ -476,6 +476,11 @@ stmmac_probe_config_dt(struct platform_device *pdev, const char **mac)
+ 	plat->eee_force_disable =
+ 		of_property_read_bool(np, "snps,eee-force-disable");
+ 
++ 	if (of_get_property(pdev->dev.of_node, "use-ncsi", NULL))
++	 	plat->use_ncsi = true;
++	else
++		plat->use_ncsi = false;
++
+ 	/* Set the maxmtu to a default of JUMBO_LEN in case the
+ 	 * parameter is not present in the device tree.
+ 	 */
+diff --git a/include/linux/stmmac.h b/include/linux/stmmac.h
+index 15e994c8a61c..6fda9c1a223e 100644
+--- a/include/linux/stmmac.h
++++ b/include/linux/stmmac.h
+@@ -185,6 +185,7 @@ struct plat_stmmacenet_data {
+ 	struct mac_device_info *(*setup)(void *priv);
+ 	void *bsp_priv;
+ 	int eee_force_disable;
++	int use_ncsi;
+ 	struct clk *stmmac_clk;
+ 	struct clk *pclk;
+ 	struct clk *clk_ptp_ref;
+-- 
+2.25.1
+

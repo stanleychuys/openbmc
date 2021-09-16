@@ -17,30 +17,30 @@ PROVIDES += "virtual/obmc-fan-mgmt"
 PROVIDES += "virtual/obmc-flash-mgmt"
 PROVIDES += "virtual/obmc-system-mgmt"
 
-RPROVIDES_${PN}-chassis += "virtual-obmc-chassis-mgmt"
-RPROVIDES_${PN}-fans += "virtual-obmc-fan-mgmt"
-RPROVIDES_${PN}-flash += "virtual-obmc-flash-mgmt"
-RPROVIDES_${PN}-system += "virtual-obmc-system-mgmt"
+RPROVIDES:${PN}-chassis += "virtual-obmc-chassis-mgmt"
+RPROVIDES:${PN}-fans += "virtual-obmc-fan-mgmt"
+RPROVIDES:${PN}-flash += "virtual-obmc-flash-mgmt"
+RPROVIDES:${PN}-system += "virtual-obmc-system-mgmt"
 
-SUMMARY_${PN}-chassis = "OLYMPUS NUVOTON Chassis"
-RDEPENDS_${PN}-chassis = " \
+SUMMARY:${PN}-chassis = "OLYMPUS NUVOTON Chassis"
+RDEPENDS:${PN}-chassis = " \
         x86-power-control \
         "
 
-SUMMARY_${PN}-fans = "OLYMPUS NUVOTON Fans"
-RDEPENDS_${PN}-fans = " \
+SUMMARY:${PN}-fans = "OLYMPUS NUVOTON Fans"
+RDEPENDS:${PN}-fans = " \
         phosphor-pid-control \
         "
 
-SUMMARY_${PN}-flash = "OLYMPUS NUVOTON Flash"
-RDEPENDS_${PN}-flash = " \
+SUMMARY:${PN}-flash = "OLYMPUS NUVOTON Flash"
+RDEPENDS:${PN}-flash = " \
         phosphor-ipmi-flash \
         ipmi-bios-update \
         ipmi-bmc-update \
         "
 
-SUMMARY_${PN}-system = "OLYMPUS NUVOTON System"
-RDEPENDS_${PN}-system = " \
+SUMMARY:${PN}-system = "OLYMPUS NUVOTON System"
+RDEPENDS:${PN}-system = " \
         webui-vue \
         obmc-ikvm \
         obmc-console \
@@ -67,12 +67,11 @@ RDEPENDS_${PN}-system = " \
         nuvoton-ipmi-oem \
         olympus-nuvoton-iptable-restore \
         srvcfg-manager \
-        crashdump \
         "
-RDEPENDS_${PN}-system_append = " \
+RDEPENDS:${PN}-system:append = " \
         ${@entity_enabled(d, '', 'first-boot-set-psu')} \
         "
 
-#RDEPENDS_${PN}-system_append_olympus-entity = " \
+#RDEPENDS:${PN}-system:append:olympus-entity = " \
 #        intel-ipmi-oem \
 #        "

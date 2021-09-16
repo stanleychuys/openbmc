@@ -30,6 +30,8 @@ GPIO_IR_TX ?= "17"
 
 CAN_OSCILLATOR ?= "16000000"
 
+WM8960="${@bb.utils.contains("MACHINE_FEATURES", "wm8960", "1", "0", d)}"
+
 inherit deploy nopackages
 
 do_deploy() {
@@ -102,6 +104,9 @@ do_deploy() {
     fi
     if [ -n "${HDMI_MODE}" ]; then
         sed -i '/#hdmi_mode=/ c\hdmi_mode=${HDMI_MODE}' $CONFIG
+    fi
+    if [ -n "${HDMI_CVT}" ]; then
+        echo 'hdmi_cvt=${HDMI_CVT}' >> $CONFIG
     fi
     if [ -n "${CONFIG_HDMI_BOOST}" ]; then
         sed -i '/#config_hdmi_boost=/ c\config_hdmi_boost=${CONFIG_HDMI_BOOST}' $CONFIG
@@ -189,9 +194,15 @@ do_deploy() {
 
     # Choose Camera Sensor to be used, default imx219 sensor
     if [ "${RASPBERRYPI_CAMERA_V2}" = "1" ]; then
-        echo "# Enable Sony RaspberryPi Camera" >> $CONFIG
+        echo "# Enable Sony RaspberryPi Camera(imx219)" >> $CONFIG
         echo "dtoverlay=imx219" >> $CONFIG
     fi
+
+    # Choose Camera Sensor to be used, default imx477 sensor
+    #if [ "${RASPBERRYPI_HD_CAMERA}" = "1" ]; then
+    #    echo "# Enable Sony RaspberryPi Camera(imx477)" >> $CONFIG
+    #    echo "dtoverlay=imx477" >> $CONFIG
+    #fi
 
     # Waveshare "C" 1024x600 7" Rev2.1 IPS capacitive touch (http://www.waveshare.com/7inch-HDMI-LCD-C.htm)
     if [ "${WAVESHARE_1024X600_C_2_1}" = "1" ]; then
@@ -245,9 +256,15 @@ do_deploy() {
                 ;;
         esac
     fi
+
+    # WM8960 support
+    if [ "${WM8960}" = "1" ]; then
+        echo "# Enable WM8960" >> $CONFIG
+        echo "dtoverlay=wm8960-soundcard" >> $CONFIG
+    fi
 }
 
-do_deploy_append_raspberrypi3-64() {
+do_deploy:append:raspberrypi3-64() {
     echo "# have a properly sized image" >> $CONFIG
     echo "disable_overscan=1" >> $CONFIG
 

@@ -26,6 +26,7 @@ import errno
 import re
 import datetime
 import pickle
+import traceback
 import bb.server.xmlrpcserver
 from bb import daemonize
 from multiprocessing import queues
@@ -147,7 +148,7 @@ class ProcessServer():
                 conn = newconnections.pop(-1)
                 fds.append(conn)
                 self.controllersock = conn
-            elif self.timeout is None and not ready:
+            elif not self.timeout and not ready:
                 serverlog("No timeout, exiting.")
                 self.quit = True
 
@@ -217,8 +218,9 @@ class ProcessServer():
                     self.command_channel_reply.send(self.cooker.command.runCommand(command))
                     serverlog("Command Completed")
                 except Exception as e:
-                   serverlog('Exception in server main event loop running command %s (%s)' % (command, str(e)))
-                   logger.exception('Exception in server main event loop running command %s (%s)' % (command, str(e)))
+                   stack = traceback.format_exc()
+                   serverlog('Exception in server main event loop running command %s (%s)' % (command, stack))
+                   logger.exception('Exception in server main event loop running command %s (%s)' % (command, stack))
 
             if self.xmlrpc in ready:
                 self.xmlrpc.handle_requests()
@@ -367,7 +369,12 @@ class ProcessServer():
                 self.next_heartbeat = now + self.heartbeat_seconds
             if hasattr(self.cooker, "data"):
                 heartbeat = bb.event.HeartbeatEvent(now)
-                bb.event.fire(heartbeat, self.cooker.data)
+                try:
+                    bb.event.fire(heartbeat, self.cooker.data)
+                except Exception as exc:
+                    if not isinstance(exc, bb.BBHandledException):
+                        logger.exception('Running heartbeat function')
+                    self.quit = True
         if nextsleep and now + nextsleep > self.next_heartbeat:
             # Shorten timeout so that we we wake up in time for
             # the heartbeat.
@@ -466,7 +473,7 @@ class BitBakeServer(object):
             try:
                 r = ready.get()
             except EOFError:
-                # Trap the child exitting/closing the pipe and error out
+                # Trap the child exiting/closing the pipe and error out
                 r = None
         if not r or r[0] != "r":
             ready.close()

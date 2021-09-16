@@ -1,6 +1,6 @@
-FILESEXTRAPATHS_prepend_buv-runbmc := "${THISDIR}/linux-nuvoton:"
+FILESEXTRAPATHS:prepend:buv-runbmc := "${THISDIR}/linux-nuvoton:"
 
-SRC_URI_append_buv-runbmc = " \
+SRC_URI:append:buv-runbmc = " \
   file://arch \
   file://buv-runbmc.cfg \
   file://0002-move-emc-debug-message-to-dev_dbg.patch \

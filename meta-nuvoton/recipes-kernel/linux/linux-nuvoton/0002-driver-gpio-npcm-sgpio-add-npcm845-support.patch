@@ -1,0 +1,142 @@
+From ef93056e75c28e9b093636013a3177dd34890364 Mon Sep 17 00:00:00 2001
+From: Joseph Liu <kwliu@nuvoton.com>
+Date: Mon, 23 Aug 2021 09:59:56 +0800
+Subject: [PATCH 2/2] driver: gpio: npcm sgpio: add npcm845 support
+
+Signed-off-by: Joseph Liu <kwliu@nuvoton.com>
+---
+ .../dts/nuvoton/nuvoton-common-npcm8xx.dtsi   | 20 +++++++++++++++++++
+ .../boot/dts/nuvoton/nuvoton-npcm845-evb.dts  | 15 +++++++++++++-
+ .../nuvoton/nuvoton-npcm845-pincfg-evb.dtsi   | 16 +++++++++++++++
+ drivers/gpio/gpio-npcm-sgpio.c                |  7 +++++++
+ 4 files changed, 57 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-common-npcm8xx.dtsi b/arch/arm64/boot/dts/nuvoton/nuvoton-common-npcm8xx.dtsi
+index 059c51781e03..1f59b850319b 100644
+--- a/arch/arm64/boot/dts/nuvoton/nuvoton-common-npcm8xx.dtsi
++++ b/arch/arm64/boot/dts/nuvoton/nuvoton-common-npcm8xx.dtsi
+@@ -560,6 +560,26 @@ tmps: tmps@188000 {
+ 				#thermal-sensor-cells = <1>;
+ 			};
+ 
++			sgpio1: sgpio@101000 {
++				clocks = <&clk NPCM8XX_CLK_APB3>;
++				compatible = "nuvoton,npcm845-sgpio";
++				gpio-controller;
++				pinctrl-names = "default";
++				pinctrl-0 = <&iox1_pins>;
++				reg = <0x101000 0x200>;
++				status = "disabled";
++			};
++
++			sgpio2: sgpio@102000 {
++				clocks = <&clk NPCM8XX_CLK_APB3>;
++				compatible = "nuvoton,npcm845-sgpio";
++				gpio-controller;
++				pinctrl-names = "default";
++				pinctrl-0 = <&iox2_pins>;
++				reg = <0x102000 0x200>;
++				status = "disabled";
++			};
++
+ 			pwm_fan:pwm-fan-controller@103000 {
+ 				compatible = "nuvoton,npcm845-pwm-fan";
+ 				reg = <0x103000 0x3000>,
+diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts
+index 1f80c13e1a25..195a80a4a169 100644
+--- a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts
++++ b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-evb.dts
+@@ -421,6 +421,15 @@ tmps: tmps@188000 {
+ 				status = "okay";
+ 			};
+ 
++			sgpio2: sgpio@102000 {
++				status = "okay";
++				bus-frequency = <16000000>;
++				nin_gpios = <64>;
++				nout_gpios = <64>;
++				gpio-line-names = "","","","","","","","",
++					"g_led","","","","","","","";
++			};
++
+ 			pwm_fan:pwm-fan-controller@103000 {
+ 				status = "okay";
+ 				pinctrl-names = "default";
+@@ -523,7 +532,11 @@ &pin240_slew
+ 				&pin241_slew
+ 				&pin242_slew
+ 				&pin243_slew
+-				&spix_pins>;
++				&spix_pins
++				&pin4_slew
++				&pin5_slew
++				&pin6_slew
++				&pin7_slew>;
+ 	};
+ };
+ 
+diff --git a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
+index 6aa77fe9a007..98622205ed79 100644
+--- a/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
++++ b/arch/arm64/boot/dts/nuvoton/nuvoton-npcm845-pincfg-evb.dtsi
+@@ -51,5 +51,21 @@ pin247_slew: pin247-slew {
+ 			pins = "GPIO247/I3C3_SDA";
+ 			slew-rate = <1>;
+ 		};
++		pin4_slew: pin4_slew {
++			pins = "GPIO4/IOX2_DI/SMB1D_SDA";
++			slew-rate = <1>;
++		};
++		pin5_slew: pin5_slew {
++			pins = "GPIO5/IOX2_LD/SMB1D_SCL";
++			slew-rate = <1>;
++		};
++		pin6_slew: pin6_slew {
++			pins = "GPIO6/IOX2_CK/SMB2D_SDA";
++			slew-rate = <1>;
++		};
++		pin7_slew: pin7_slew {
++			pins = "GPIO7/IOX2_D0/SMB2D_SCL";
++			slew-rate = <1>;
++		};
+ 	};
+ };
+diff --git a/drivers/gpio/gpio-npcm-sgpio.c b/drivers/gpio/gpio-npcm-sgpio.c
+index 58132389340e..31929f8e8688 100644
+--- a/drivers/gpio/gpio-npcm-sgpio.c
++++ b/drivers/gpio/gpio-npcm-sgpio.c
+@@ -24,6 +24,7 @@
+ #define  IOXCFG1_SFT_CLK_3	0x0D
+ #define  IOXCFG1_SFT_CLK_4	0x0C
+ #define  IOXCFG1_SFT_CLK_8	0x07
++#define  IOXCFG1_SFT_CLK_16	0x06
+ #define  IOXCFG1_SFT_CLK_32	0x05
+ #define  IOXCFG1_SFT_CLK_1024	0x00
+ #define  IOXCFG1_SCLK_POL BIT(4)
+@@ -259,10 +260,15 @@ static int nuvoton_sgpio_setup_clk(struct nuvoton_sgpio *gpio, u32 sgpio_freq)
+ 	sgpio_clk_div = (apb_freq / sgpio_freq) + 1;
+ 	tmp = ioread8(gpio->base + IOXCFG1) & ~IOXCFG1_SFT_CLK;
+ 
++#ifdef CONFIG_ARCH_NPCM7XX
+ 	if (sgpio_clk_div == 2)
+ 		iowrite8(IOXCFG1_SFT_CLK_2 | tmp, gpio->base + IOXCFG1);
+ 	else if (sgpio_clk_div == 3)
+ 		iowrite8(IOXCFG1_SFT_CLK_3 | tmp, gpio->base + IOXCFG1);
++#else
++	if (sgpio_clk_div == 16)
++		iowrite8(IOXCFG1_SFT_CLK_16 | tmp, gpio->base + IOXCFG1);
++#endif
+ 	else if (sgpio_clk_div == 4)
+ 		iowrite8(IOXCFG1_SFT_CLK_4 | tmp, gpio->base + IOXCFG1);
+ 	else if (sgpio_clk_div == 8)
+@@ -279,6 +285,7 @@ static int nuvoton_sgpio_setup_clk(struct nuvoton_sgpio *gpio, u32 sgpio_freq)
+ 
+ static const struct of_device_id nuvoton_sgpio_of_table[] = {
+ 	{ .compatible = "nuvoton,npcm7xx-sgpio" },
++	{ .compatible = "nuvoton,npcm845-sgpio" },
+ 	{}
+ };
+ 
+-- 
+2.25.1
+

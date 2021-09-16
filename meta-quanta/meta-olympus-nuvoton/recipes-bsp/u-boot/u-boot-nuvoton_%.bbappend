@@ -1,2 +1,2 @@
-UBOOT_MAKE_TARGET_append_olympus-nuvoton = " DEVICE_TREE=${UBOOT_DEVICETREE}"
+UBOOT_MAKE_TARGET:append:olympus-nuvoton = " DEVICE_TREE=${UBOOT_DEVICETREE}"
 

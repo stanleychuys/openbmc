@@ -26,7 +26,7 @@ DEPENDS += "sdeventplus"
 DEPENDS += "packagegroup-obmc-yaml-providers"
 
 PACKAGE_BEFORE_PN = "${PN}-test"
-FILES_${PN}-test = "${bindir}/*-test"
+FILES:${PN}-test = "${bindir}/*-test"
 
 # Package configuration
 LOGGING_PACKAGES = " \
@@ -34,27 +34,27 @@ LOGGING_PACKAGES = " \
         phosphor-rsyslog-config \
 "
 
-ALLOW_EMPTY_${PN} = "1"
+ALLOW_EMPTY:${PN} = "1"
 PACKAGE_BEFORE_PN += "${LOGGING_PACKAGES}"
 SYSTEMD_PACKAGES = "${LOGGING_PACKAGES}"
 DBUS_PACKAGES = "${LOGGING_PACKAGES}"
 USERADD_PACKAGES = "${PN}-base"
-GROUPADD_PARAM_${PN}-base = "-r phosphor-logging"
+GROUPADD_PARAM:${PN}-base = "-r phosphor-logging"
 
-FILES_${PN}-base += " \
-        ${sysconfdir}/dbus-1 \
+FILES:${PN}-base += " \
+        ${datadir}/dbus-1 \
         ${bindir}/phosphor-log-manager \
         ${libdir}/libphosphor_logging.so.* \
 "
-DBUS_SERVICE_${PN}-base += "xyz.openbmc_project.Logging.service"
+DBUS_SERVICE:${PN}-base += "xyz.openbmc_project.Logging.service"
 
-DBUS_SERVICE_phosphor-rsyslog-config += "xyz.openbmc_project.Syslog.Config.service"
-FILES_phosphor-rsyslog-config += " \
+DBUS_SERVICE:phosphor-rsyslog-config += "xyz.openbmc_project.Syslog.Config.service"
+FILES:phosphor-rsyslog-config += " \
         ${bindir}/phosphor-rsyslog-conf \
 "
 
 SRC_URI += "git://github.com/openbmc/phosphor-logging"
-SRCREV = "cad16201f83a1a91b29781cff26e9e09158cae0e"
+SRCREV = "87001e465fc420d3eedb3630bc162ed714a7809e"
 
 S = "${WORKDIR}/git"
 
@@ -63,11 +63,12 @@ PACKAGECONFIG ??= ""
 PACKAGECONFIG[openpower-pels] = " \
         -Dopenpower-pel-extension=enabled, \
         -Dopenpower-pel-extension=disabled, \
-        nlohmann-json cli11 pldm, \
+        nlohmann-json cli11 pldm python3, \
         python3, \
         "
 
 EXTRA_OEMESON = " \
+        -Dtests=disabled \
         -Dyamldir=${STAGING_DIR_TARGET}${yaml_dir} \
         -Dcallout_yaml=${STAGING_DIR_NATIVE}${callouts_datadir}/callouts.yaml \
         "

@@ -1,6 +1,5 @@
 SUMMARY = "Phosphor OpenBMC Kudo SCP Firmware Upgrade Command"
 DESCRIPTION = "Phosphor OpenBMC Kudo SCP Firmware Upgrade Comman Daemon"
-FILESEXTRAPATHS_prepend := "${THISDIR}/kudo-scp-update:"
 
 PR = "r1"
 LICENSE = "Apache-2.0"
@@ -11,13 +10,13 @@ inherit obmc-phosphor-systemd
 
 DEPENDS += "systemd"
 DEPENDS += "phosphor-ipmi-flash"
-RDEPENDS_${PN} += "libsystemd"
-RDEPENDS_${PN} += "bash"
+RDEPENDS:${PN} += "libsystemd"
+RDEPENDS:${PN} += "bash"
 
-FILES_${PN} += "${datadir}/phosphor-ipmi-flash/config-scp.json"
-FILES_${PN} += "${datadir}/phosphor-ipmi-flash/config-scpback.json"
+FILES:${PN} += "${datadir}/phosphor-ipmi-flash/config-scp.json"
+FILES:${PN} += "${datadir}/phosphor-ipmi-flash/config-scpback.json"
 
-SRC_URI_append_kudo = " \
+SRC_URI:append:kudo = " \
     file://phosphor-ipmi-flash-scp-update.service \
     file://phosphor-ipmi-flash-scpback-update.service \
     file://config-scp.json \
@@ -25,7 +24,7 @@ SRC_URI_append_kudo = " \
     "
 
 SYSTEMD_PACKAGES = "${PN}"
-SYSTEMD_SERVICE_${PN}_append_kudo = " \
+SYSTEMD_SERVICE:${PN}:append:kudo = " \
     phosphor-ipmi-flash-scp-update.service \
     phosphor-ipmi-flash-scpback-update.service \
     "

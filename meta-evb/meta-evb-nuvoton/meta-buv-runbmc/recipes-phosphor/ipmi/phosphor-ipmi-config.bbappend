@@ -1,11 +1,11 @@
-FILESEXTRAPATHS_prepend_buv-runbmc := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:prepend:buv-runbmc := "${THISDIR}/${PN}:"
 
 inherit image_version
 
 unset do_patch[noexec]
 do_patch[depends] = "os-release:do_populate_sysroot"
 
-python do_patch() {
+python do_patch:buv-runbmc() {
     import json
     import re
     from shutil import copyfile

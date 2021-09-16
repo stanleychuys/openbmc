@@ -1,12 +1,12 @@
 inherit entity-utils
-RDEPENDS_${PN}-fan-control_remove = " \
+RDEPENDS:${PN}-fan-control:remove = " \
        phosphor-fan-control \
        phosphor-fan-monitor \
        "
-RDEPENDS_${PN}-inventory_remove = " \
+RDEPENDS:${PN}-inventory:remove = " \
        phosphor-fan-presence-tach \
        "
 
-RDEPENDS_${PN}-fru-ipmi_remove = " \
+RDEPENDS:${PN}-fru-ipmi:remove = " \
        ${@entity_enabled(d, '','fru-device')} \
        "

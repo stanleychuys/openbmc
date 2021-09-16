@@ -15,8 +15,8 @@ PACKAGECONFIG[max31785-msl] = "-Denable-max31785-msl=true, -Denable-max31785-msl
 PACKAGE_BEFORE_PN = "max31785-msl"
 SYSTEMD_PACKAGES = "${PN} max31785-msl"
 
-SYSTEMD_SERVICE_${PN} = "xyz.openbmc_project.Hwmon@.service"
-SYSTEMD_SERVICE_max31785-msl = "${@bb.utils.contains('PACKAGECONFIG', 'max31785-msl', 'phosphor-max31785-msl@.service', '', d)}"
+SYSTEMD_SERVICE:${PN} = "xyz.openbmc_project.Hwmon@.service"
+SYSTEMD_SERVICE:max31785-msl = "${@bb.utils.contains('PACKAGECONFIG', 'max31785-msl', 'phosphor-max31785-msl@.service', '', d)}"
 
 DEPENDS += " \
         sdbusplus \
@@ -28,22 +28,24 @@ DEPENDS += " \
         cli11 \
         "
 
-FILES_${PN} += "${base_libdir}/systemd/system/xyz.openbmc_project.Hwmon@.service"
-RDEPENDS_${PN} += "\
+EXTRA_OEMESON:append = " -Dtests=disabled"
+
+FILES:${PN} += "${base_libdir}/systemd/system/xyz.openbmc_project.Hwmon@.service"
+RDEPENDS:${PN} += "\
         bash \
         "
 
-RRECOMMENDS_${PN} += "${VIRTUAL-RUNTIME_phosphor-hwmon-config}"
+RRECOMMENDS:${PN} += "${VIRTUAL-RUNTIME_phosphor-hwmon-config}"
 
-FILES_max31785-msl = "\
+FILES:max31785-msl = "\
         ${base_libdir}/systemd/system/phosphor-max31785-msl@.service \
         ${bindir}/max31785-msl \
         "
-RDEPENDS_max31785-msl = "${VIRTUAL-RUNTIME_base-utils} i2c-tools bash"
+RDEPENDS:max31785-msl = "${VIRTUAL-RUNTIME_base-utils} i2c-tools bash"
 
 SRC_URI += "git://github.com/openbmc/phosphor-hwmon"
 
-SRCREV = "e32ce16bb6cc527b2e46b6e90ef7ac47404da173"
+SRCREV = "04da055198fe03f119e53578ac80a6188461b748"
 
 S = "${WORKDIR}/git"
 
@@ -51,7 +53,7 @@ S = "${WORKDIR}/git"
 # 1. It adds HW_SENSOR_ID value if not set. The value being calculated
 #    as sha256sum.
 # 2. For each hwmon the script generates busconfig ACLs.
-pkg_postinst_${PN}() {
+pkg_postinst:${PN}() {
     hwmon_dir="$D/etc/default/obmc/hwmon"
     dbus_dir="$D/etc/dbus-1/system.d"
 
